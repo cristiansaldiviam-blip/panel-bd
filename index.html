@@ -784,6 +784,8 @@ function applyBDFiltered(loadAll){
   if(toLoad.length===0){status.textContent='⚠ Ninguna tarea coincide con los filtros.';pendingBD=null;return;}
   showSpinner('Procesando '+toLoad.length+' tareas...');
   setTimeout(()=>{
+    // Georef rows that came from JSON (no lat/lon)
+    toLoad.forEach(r=>{ if(!r.lat&&!r.lon) georefRow(r); });
     DATA=toLoad; pendingBD=null;
     pinnedIds=new Set(); selIds=new Set();
     computeScores(); buildDataIdx(); buildMarkers();
@@ -948,6 +950,32 @@ function exportToJson(){
   URL.revokeObjectURL(a.href);
   const st=document.getElementById('gh-status');
   if(st){st.className='gh-status ok';st.innerHTML='&#10003; <b>bd_data.json</b> ('+clean.length+' tareas) descargado — Súbelo a GitHub';}
+}
+
+function georefRow(r){
+  const cat=classifyTask(r);
+  if(cat==='AS'){
+    const fallaId=r['ID Colector Falla']?parseInt(r['ID Colector Falla']):null;
+    const llFalla=fallaId&&AS_COORD_MAP?AS_COORD_MAP.get(fallaId):null;
+    if(llFalla){r['lat']=llFalla[0];r['lon']=llFalla[1];r['_georef']='colector falla';}
+    else{
+      const colId=r['ID Colector GIS']?parseInt(r['ID Colector GIS']):null;
+      const llGis=colId&&AS_COORD_MAP?AS_COORD_MAP.get(colId):null;
+      if(llGis){r['lat']=llGis[0];r['lon']=llGis[1];r['_georef']='colector GIS';}
+      else{
+        const cuenta=r['Numero Cuenta']?parseInt(r['Numero Cuenta']):null;
+        const llCuenta=cuenta&&COORD_MAP?COORD_MAP.get(cuenta):null;
+        if(llCuenta){r['lat']=llCuenta[0];r['lon']=llCuenta[1];r['_georef']='cuenta';}
+        else{r['lat']=null;r['lon']=null;r['_georef']=null;}
+      }
+    }
+  } else {
+    const cuenta=r['Numero Cuenta']?parseInt(r['Numero Cuenta']):null;
+    const llCuenta=cuenta&&COORD_MAP?COORD_MAP.get(cuenta):null;
+    if(llCuenta){r['lat']=llCuenta[0];r['lon']=llCuenta[1];r['_georef']='cuenta';}
+    else{r['lat']=null;r['lon']=null;r['_georef']=null;}
+  }
+  return r;
 }
 function buildDataIdx(){
   DATA_IDX=new Map();
@@ -1930,32 +1958,7 @@ function loadBD(input){
               &&!EXCL_CAT.includes((r['Categoría Tarea']||'').trim().toUpperCase())
               &&!(r['Tarea']||'').toUpperCase().includes('DOM'))
       .map(r=>{
-        const cat=classifyTask(r);
-        if(cat==='AS'){
-          // AS/SLRAT priority: Colector Falla (99% match) → Colector GIS → Numero Cuenta
-          const fallaId=r['ID Colector Falla']?parseInt(r['ID Colector Falla']):null;
-          const llFalla=fallaId&&AS_COORD_MAP?AS_COORD_MAP.get(fallaId):null;
-          if(llFalla){
-            r['lat']=llFalla[0];r['lon']=llFalla[1];r['_georef']='colector falla';
-          } else {
-            const colId=r['ID Colector GIS']?parseInt(r['ID Colector GIS']):null;
-            const llGis=colId&&AS_COORD_MAP?AS_COORD_MAP.get(colId):null;
-            if(llGis){
-              r['lat']=llGis[0];r['lon']=llGis[1];r['_georef']='colector GIS';
-            } else {
-              const cuenta=r['Numero Cuenta']?parseInt(r['Numero Cuenta']):null;
-              const llCuenta=cuenta&&COORD_MAP?COORD_MAP.get(cuenta):null;
-              if(llCuenta){r['lat']=llCuenta[0];r['lon']=llCuenta[1];r['_georef']='cuenta';}
-              else{r['lat']=null;r['lon']=null;r['_georef']=null;}
-            }
-          }
-        } else {
-          // AP/Obra/EH/Grifo: Numero Cuenta
-          const cuenta=r['Numero Cuenta']?parseInt(r['Numero Cuenta']):null;
-          const llCuenta=cuenta&&COORD_MAP?COORD_MAP.get(cuenta):null;
-          if(llCuenta){r['lat']=llCuenta[0];r['lon']=llCuenta[1];r['_georef']='cuenta';}
-          else{r['lat']=null;r['lon']=null;r['_georef']=null;}
-        }
+        georefRow(r);
         return r;
       });
     pendingBD=processed;
