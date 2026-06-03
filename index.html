@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
+  <meta name="version" content="v3.1780519420"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Panel BD — Gestión de Tareas</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -553,14 +554,30 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 <div class="tab-page" id="page-upload">
   <div class="upload-page">
     <h2>&#128194; Cargar Base de Datos</h2>
-    <div class="gh-sync-bar">
-      <span style="font-size:20px">&#128027;</span>
-      <div style="flex:1">
-        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">Sincronización GitHub</div>
-        <div class="gh-status" id="gh-status">Sin datos cargados desde GitHub</div>
+    <div class="gh-sync-bar" style="flex-direction:column;align-items:stretch;gap:10px;">
+      <!-- Fila 1: estado + botones acción -->
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span style="font-size:20px;">&#128027;</span>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px;">Sincronización GitHub</div>
+          <div class="gh-status" id="gh-status">Sin datos cargados desde GitHub</div>
+        </div>
+        <button class="gh-btn secondary" onclick="fetchFromGithub()">&#8659; Cargar desde GitHub</button>
+        <button class="gh-btn primary" onclick="exportToJson()">&#8681; Exportar JSON</button>
       </div>
-      <button class="gh-btn secondary" onclick="fetchFromGithub()">&#8659; Cargar desde GitHub</button>
-      <button class="gh-btn primary" id="gh-export-btn" onclick="exportToJson()" >&#8679; Exportar BD como JSON</button>
+      <!-- Fila 2: token + publicar -->
+      <div style="display:flex;align-items:center;gap:8px;padding-top:10px;border-top:1px solid var(--border);flex-wrap:wrap;">
+        <label style="font-size:12px;font-weight:600;color:var(--text2);white-space:nowrap;">&#128274; Token GitHub:</label>
+        <input id="gh-token-input" type="password"
+          placeholder="ghp_xxxxxxxx  (GitHub → Settings → Developer settings → Tokens)"
+          oninput="saveGhToken(this.value)"
+          style="flex:1;min-width:220px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);"/>
+        <span id="gh-token-saved" style="display:none;font-size:11px;color:var(--ok);font-weight:600;">&#10003; Guardado</span>
+        <button id="gh-publish-btn" onclick="publishToGithub()"
+          style="padding:6px 16px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;background:#2da44e;color:#fff;">
+          &#8679; Publicar en GitHub
+        </button>
+      </div>
     </div>
 
     <div class="upload-note">
