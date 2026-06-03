@@ -924,7 +924,7 @@ function exportToJson(){
   const source=(DATA&&DATA.length>0)?DATA:(pendingBD&&pendingBD.length>0?pendingBD:null);
   if(!source){alert('Primero carga una BD.');return;}
   const DATA_SRC=source;
-  const clean=(typeof DATA_SRC!=='undefined'?DATA_SRC:DATA).map(r=>{
+  if(false){const clean=(typeof DATA_SRC!=='undefined'?DATA_SRC:DATA).map(r=>{
     const o={};
     for(const k in r){
       if(!k.startsWith('_')&&k!=='lat'&&k!=='lon'&&k!=='dias_post_fh'&&k!=='dias_vencimiento'&&k!=='is_duplicate')
@@ -932,7 +932,10 @@ function exportToJson(){
     }
     return o;
   });
-  const blob=new Blob([JSON.stringify(clean)],{type:'application/json'});
+  const _cleanData=(typeof DATA_SRC!=='undefined'?DATA_SRC:DATA).map(r=>{const o={};for(const k in r){if(!k.startsWith('_')&&k!=='lat'&&k!=='lon'&&k!=='dias_post_fh'&&k!=='dias_vencimiento'&&k!=='is_duplicate')o[k]=r[k];}return o;});
+  const meta={_exported_at:new Date().toISOString(),_total:_cleanData.length,_rows:_cleanData};
+  }//end dead
+  const blob=new Blob([JSON.stringify(meta)],{type:'application/json'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   a.download='bd_data.json';
