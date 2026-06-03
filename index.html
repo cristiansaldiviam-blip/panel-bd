@@ -306,6 +306,16 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 .gh-btn.primary:hover{background:#444d56;}
 .gh-btn.secondary{background:var(--surface);color:var(--text);border:1px solid var(--border);}
 .gh-btn.secondary:hover{border-color:var(--accent);color:var(--accent);}
+
+.gh-token-row{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.gh-token-input{flex:1;min-width:200px;padding:6px 10px;border:1px solid var(--border);
+  border-radius:6px;font-size:12px;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);}
+.gh-token-input:focus{outline:none;border-color:var(--accent);}
+.gh-publish-btn{padding:6px 14px;border-radius:6px;border:none;font-size:12px;font-weight:600;
+  cursor:pointer;font-family:'Inter',sans-serif;background:#2da44e;color:#fff;display:flex;align-items:center;gap:6px;}
+.gh-publish-btn:hover{background:#218838;}
+.gh-publish-btn:disabled{opacity:.5;cursor:not-allowed;}
+.gh-token-saved{font-size:11px;color:var(--ok);font-weight:600;}
 ::-webkit-scrollbar{display:none;}
 .tab-btn.cat-tab{font-size:12px;padding:8px 12px;}
 .tab-btn.cat-tab.active{font-weight:700;}
@@ -345,6 +355,16 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 .gh-btn.primary:hover{background:#444d56;}
 .gh-btn.secondary{background:var(--surface);color:var(--text);border:1px solid var(--border);}
 .gh-btn.secondary:hover{border-color:var(--accent);color:var(--accent);}
+
+.gh-token-row{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.gh-token-input{flex:1;min-width:200px;padding:6px 10px;border:1px solid var(--border);
+  border-radius:6px;font-size:12px;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);}
+.gh-token-input:focus{outline:none;border-color:var(--accent);}
+.gh-publish-btn{padding:6px 14px;border-radius:6px;border:none;font-size:12px;font-weight:600;
+  cursor:pointer;font-family:'Inter',sans-serif;background:#2da44e;color:#fff;display:flex;align-items:center;gap:6px;}
+.gh-publish-btn:hover{background:#218838;}
+.gh-publish-btn:disabled{opacity:.5;cursor:not-allowed;}
+.gh-token-saved{font-size:11px;color:var(--ok);font-weight:600;}
 ::-webkit-scrollbar{width:5px;height:5px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
@@ -976,6 +996,102 @@ function georefRow(r){
     else{r['lat']=null;r['lon']=null;r['_georef']=null;}
   }
   return r;
+}
+
+// ─── GITHUB PUBLISH ───────────────────────────────────────────────────────
+const GH_OWNER='cristiansaldiviam-blip';
+const GH_REPO='panel-bd';
+const GH_FILE='bd_data.json';
+
+function saveGhToken(val){
+  try{
+    if(val) localStorage.setItem('gh_token',val);
+    else localStorage.removeItem('gh_token');
+    const saved=document.getElementById('gh-token-saved');
+    if(saved) saved.style.display=val?'inline':'none';
+  }catch(e){}
+}
+
+function loadGhToken(){
+  try{ return localStorage.getItem('gh_token')||''; }
+  catch(e){ return ''; }
+}
+
+function initGhToken(){
+  const t=loadGhToken();
+  const inp=document.getElementById('gh-token-input');
+  const saved=document.getElementById('gh-token-saved');
+  if(inp&&t){ inp.value=t; }
+  if(saved&&t){ saved.style.display='inline'; }
+}
+
+async function publishToGithub(){
+  const token=loadGhToken();
+  if(!token){
+    alert('Primero ingresa tu token de GitHub en el campo de arriba.\n\nVe a GitHub → Settings → Developer settings → Personal access tokens → Generate new token (classic) → marca "repo" → copia el token.');
+    return;
+  }
+  const source=(DATA&&DATA.length>0)?DATA:(pendingBD&&pendingBD.length>0?pendingBD:null);
+  if(!source){ alert('Primero carga una BD.'); return; }
+
+  const btn=document.getElementById('gh-publish-btn');
+  const status=document.getElementById('gh-status');
+  btn.disabled=true;
+  btn.textContent='Subiendo...';
+  status.className='gh-status';
+  status.textContent='Subiendo a GitHub...';
+
+  try{
+    // 1. Build JSON
+    const clean=source.map(r=>{
+      const o={};
+      for(const k in r){
+        if(!k.startsWith('_')&&k!=='lat'&&k!=='lon'&&k!=='dias_post_fh'&&k!=='dias_vencimiento'&&k!=='is_duplicate')
+          o[k]=r[k];
+      }
+      return o;
+    });
+    const meta={_exported_at:new Date().toISOString(),_total:clean.length,_rows:clean};
+    const content=btoa(unescape(encodeURIComponent(JSON.stringify(meta))));
+
+    // 2. Get current file SHA (needed to update)
+    const shaRes=await fetch(
+      `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`,
+      {headers:{'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json'}}
+    );
+    let sha=null;
+    if(shaRes.ok){ const shaData=await shaRes.json(); sha=shaData.sha; }
+
+    // 3. Upload file
+    const body={
+      message:'Actualizar BD — '+new Date().toLocaleString()+' ('+clean.length+' tareas)',
+      content:content,
+      ...(sha?{sha}:{})
+    };
+    const uploadRes=await fetch(
+      `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`,
+      {method:'PUT',headers:{
+        'Authorization':'token '+token,
+        'Accept':'application/vnd.github.v3+json',
+        'Content-Type':'application/json'
+      }, body:JSON.stringify(body)}
+    );
+
+    if(!uploadRes.ok){
+      const err=await uploadRes.json();
+      throw new Error(err.message||'Error '+uploadRes.status);
+    }
+
+    status.className='gh-status ok';
+    status.textContent='&#10003; '+clean.length+' tareas publicadas en GitHub — '+new Date().toLocaleTimeString()+' (visible en ~2 min)';
+    btn.textContent='&#8679; Publicar en GitHub';
+
+  }catch(e){
+    status.className='gh-status err';
+    status.textContent='✗ Error: '+e.message;
+    btn.textContent='&#8679; Publicar en GitHub';
+  }
+  btn.disabled=false;
 }
 function buildDataIdx(){
   DATA_IDX=new Map();
@@ -1973,6 +2089,7 @@ function applyBD(){showLoadModal();}
 window.addEventListener('DOMContentLoaded',async()=>{
   showSpinner('Cargando coordenadas...');
   initMap();
+  initGhToken();
   await loadCoordMap();
   await loadAsCoordMap();
   const EXCL_OT_INIT=['CAMBIO DE MAP INI. PROPIA','CAMBIO DE MAP NO REGLAMENTADO','TRABAJOS VARIOS EN ARRANQUE','MANTENCION RED AP TRANSPORTE','TRAB PROY REPACION ARRANQUE','INSPECCION TV ALCANTARILLADO','REPOSICION POR DEUDA 2','REPARACION DE ARRANQUE DMA','NUEVOS SERVICIOS','NUEVO SERVICIO','NUEVOS SERVICIOS AP','NUEVOS SERVICIOS AS','CONEXIONES NUEVAS','CONEXION NUEVA'];
