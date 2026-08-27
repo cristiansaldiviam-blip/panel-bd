@@ -2,7 +2,6 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-  <meta name="version" content="v3.1780519420"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Panel BD — Gestión de Tareas</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -295,28 +294,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 .lm-btn-secondary{padding:8px 16px;background:transparent;color:var(--text2);
   border:1px solid var(--border);border-radius:7px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;}
 .lm-btn-secondary:hover{border-color:var(--accent);color:var(--accent);}
-
-.gh-sync-bar{background:var(--surface);border:1px solid var(--border);border-radius:10px;
-  padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.gh-status{font-size:12px;color:var(--text2);flex:1;}
-.gh-status.ok{color:var(--ok);font-weight:600;}
-.gh-status.err{color:var(--dup);font-weight:600;}
-.gh-btn{padding:6px 14px;border-radius:6px;border:none;font-size:12px;font-weight:600;
-  cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:6px;}
-.gh-btn.primary{background:#24292f;color:#fff;}
-.gh-btn.primary:hover{background:#444d56;}
-.gh-btn.secondary{background:var(--surface);color:var(--text);border:1px solid var(--border);}
-.gh-btn.secondary:hover{border-color:var(--accent);color:var(--accent);}
-
-.gh-token-row{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;}
-.gh-token-input{flex:1;min-width:200px;padding:6px 10px;border:1px solid var(--border);
-  border-radius:6px;font-size:12px;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);}
-.gh-token-input:focus{outline:none;border-color:var(--accent);}
-.gh-publish-btn{padding:6px 14px;border-radius:6px;border:none;font-size:12px;font-weight:600;
-  cursor:pointer;font-family:'Inter',sans-serif;background:#2da44e;color:#fff;display:flex;align-items:center;gap:6px;}
-.gh-publish-btn:hover{background:#218838;}
-.gh-publish-btn:disabled{opacity:.5;cursor:not-allowed;}
-.gh-token-saved{font-size:11px;color:var(--ok);font-weight:600;}
 ::-webkit-scrollbar{display:none;}
 .tab-btn.cat-tab{font-size:12px;padding:8px 12px;}
 .tab-btn.cat-tab.active{font-weight:700;}
@@ -344,28 +321,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 .lm-btn-secondary{padding:8px 16px;background:transparent;color:var(--text2);
   border:1px solid var(--border);border-radius:7px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;}
 .lm-btn-secondary:hover{border-color:var(--accent);color:var(--accent);}
-
-.gh-sync-bar{background:var(--surface);border:1px solid var(--border);border-radius:10px;
-  padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.gh-status{font-size:12px;color:var(--text2);flex:1;}
-.gh-status.ok{color:var(--ok);font-weight:600;}
-.gh-status.err{color:var(--dup);font-weight:600;}
-.gh-btn{padding:6px 14px;border-radius:6px;border:none;font-size:12px;font-weight:600;
-  cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:6px;}
-.gh-btn.primary{background:#24292f;color:#fff;}
-.gh-btn.primary:hover{background:#444d56;}
-.gh-btn.secondary{background:var(--surface);color:var(--text);border:1px solid var(--border);}
-.gh-btn.secondary:hover{border-color:var(--accent);color:var(--accent);}
-
-.gh-token-row{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;}
-.gh-token-input{flex:1;min-width:200px;padding:6px 10px;border:1px solid var(--border);
-  border-radius:6px;font-size:12px;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);}
-.gh-token-input:focus{outline:none;border-color:var(--accent);}
-.gh-publish-btn{padding:6px 14px;border-radius:6px;border:none;font-size:12px;font-weight:600;
-  cursor:pointer;font-family:'Inter',sans-serif;background:#2da44e;color:#fff;display:flex;align-items:center;gap:6px;}
-.gh-publish-btn:hover{background:#218838;}
-.gh-publish-btn:disabled{opacity:.5;cursor:not-allowed;}
-.gh-token-saved{font-size:11px;color:var(--ok);font-weight:600;}
 ::-webkit-scrollbar{width:5px;height:5px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
@@ -554,32 +509,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 <div class="tab-page" id="page-upload">
   <div class="upload-page">
     <h2>&#128194; Cargar Base de Datos</h2>
-    <div class="gh-sync-bar" style="flex-direction:column;align-items:stretch;gap:10px;">
-      <!-- Fila 1: estado + botones acción -->
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <span style="font-size:20px;">&#128027;</span>
-        <div style="flex:1;">
-          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px;">Sincronización GitHub</div>
-          <div class="gh-status" id="gh-status">Sin datos cargados desde GitHub</div>
-        </div>
-        <button class="gh-btn secondary" onclick="fetchFromGithub()">&#8659; Cargar desde GitHub</button>
-        <button class="gh-btn primary" onclick="exportToJson()">&#8681; Exportar JSON</button>
-      </div>
-      <!-- Fila 2: token + publicar -->
-      <div style="display:flex;align-items:center;gap:8px;padding-top:10px;border-top:1px solid var(--border);flex-wrap:wrap;">
-        <label style="font-size:12px;font-weight:600;color:var(--text2);white-space:nowrap;">&#128274; Token GitHub:</label>
-        <input id="gh-token-input" type="password"
-          placeholder="ghp_xxxxxxxx  (GitHub → Settings → Developer settings → Tokens)"
-          oninput="saveGhToken(this.value)"
-          style="flex:1;min-width:220px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);"/>
-        <span id="gh-token-saved" style="display:none;font-size:11px;color:var(--ok);font-weight:600;">&#10003; Guardado</span>
-        <button id="gh-publish-btn" onclick="publishToGithub()"
-          style="padding:6px 16px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;background:#2da44e;color:#fff;">
-          &#8679; Publicar en GitHub
-        </button>
-      </div>
-    </div>
-
     <div class="upload-note">
       Georeferenciaci&#243;n autom&#225;tica con <b>137.290 cuentas</b> embebidas. Tambi&#233;n se calculan autom&#225;ticamente <b>D&#237;as Post FH</b>, <b>Vencimiento</b>, <b>Proximidad &lt;500m</b> y <b>Duplicados</b>.
     </div>
@@ -821,8 +750,6 @@ function applyBDFiltered(loadAll){
   if(toLoad.length===0){status.textContent='⚠ Ninguna tarea coincide con los filtros.';pendingBD=null;return;}
   showSpinner('Procesando '+toLoad.length+' tareas...');
   setTimeout(()=>{
-    // Georef rows that came from JSON (no lat/lon)
-    toLoad.forEach(r=>{ if(!r.lat&&!r.lon) georefRow(r); });
     DATA=toLoad; pendingBD=null;
     pinnedIds=new Set(); selIds=new Set();
     computeScores(); buildDataIdx(); buildMarkers();
@@ -935,180 +862,6 @@ async function loadCoordMapCached(cacheKey,b64Data,targetMap,mapName){
   for(let i=0;i<data.c.length;i++) targetMap.set(data.c[i],[data.la[i],data.lo[i]]);
   console.log(mapName+' fresh:',targetMap.size);
   idbSet(cacheKey+'_v1',{k:data.c,la:data.la,lo:data.lo});
-}
-
-// ─── GITHUB SYNC ──────────────────────────────────────────────────────────
-const GH_RAW_URL='https://raw.githubusercontent.com/cristiansaldiviam-blip/panel-bd/main/bd_data.json';
-
-async function fetchFromGithub(){
-  const status=document.getElementById('gh-status');
-  status.className='gh-status';
-  status.textContent='Cargando desde GitHub...';
-  try{
-    const res=await fetch(GH_RAW_URL+'?t='+Date.now());
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const text=await res.text();
-    let payload;
-    try{payload=JSON.parse(text);}
-    catch(e){throw new Error('JSON inválido');}
-    // Handle both formats: plain array [] or {_rows:[...]}
-    const rows=Array.isArray(payload)?payload:
-               (payload&&Array.isArray(payload._rows))?payload._rows:null;
-    const exportedAt=(!Array.isArray(payload)&&payload._exported_at)
-      ?' — '+new Date(payload._exported_at).toLocaleString():'';
-    if(!rows||rows.length===0) throw new Error('Sin datos en bd_data.json');
-    pendingBD=rows;
-    status.className='gh-status ok';
-    status.textContent='✓ '+rows.length+' tareas'+exportedAt;
-    showLoadModal();
-  }catch(e){
-    status.className='gh-status err';
-    status.textContent='✗ '+e.message;
-  }
-}
-
-function exportToJson(){
-  const source=(DATA&&DATA.length>0)?DATA:(pendingBD&&pendingBD.length>0?pendingBD:null);
-  if(!source){alert('Primero carga una BD.');return;}
-  const clean=source.map(r=>{
-    const o={};
-    for(const k in r){
-      if(!k.startsWith('_')&&k!=='lat'&&k!=='lon'&&k!=='dias_post_fh'&&k!=='dias_vencimiento'&&k!=='is_duplicate')
-        o[k]=r[k];
-    }
-    return o;
-  });
-  const meta={_exported_at:new Date().toISOString(),_total:clean.length,_rows:clean};
-  const blob=new Blob([JSON.stringify(meta)],{type:'application/json'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='bd_data.json';
-  a.click();
-  URL.revokeObjectURL(a.href);
-  const st=document.getElementById('gh-status');
-  if(st){st.className='gh-status ok';st.innerHTML='&#10003; <b>bd_data.json</b> ('+clean.length+' tareas) descargado — Súbelo a GitHub';}
-}
-
-function georefRow(r){
-  const cat=classifyTask(r);
-  if(cat==='AS'){
-    const fallaId=r['ID Colector Falla']?parseInt(r['ID Colector Falla']):null;
-    const llFalla=fallaId&&AS_COORD_MAP?AS_COORD_MAP.get(fallaId):null;
-    if(llFalla){r['lat']=llFalla[0];r['lon']=llFalla[1];r['_georef']='colector falla';}
-    else{
-      const colId=r['ID Colector GIS']?parseInt(r['ID Colector GIS']):null;
-      const llGis=colId&&AS_COORD_MAP?AS_COORD_MAP.get(colId):null;
-      if(llGis){r['lat']=llGis[0];r['lon']=llGis[1];r['_georef']='colector GIS';}
-      else{
-        const cuenta=r['Numero Cuenta']?parseInt(r['Numero Cuenta']):null;
-        const llCuenta=cuenta&&COORD_MAP?COORD_MAP.get(cuenta):null;
-        if(llCuenta){r['lat']=llCuenta[0];r['lon']=llCuenta[1];r['_georef']='cuenta';}
-        else{r['lat']=null;r['lon']=null;r['_georef']=null;}
-      }
-    }
-  } else {
-    const cuenta=r['Numero Cuenta']?parseInt(r['Numero Cuenta']):null;
-    const llCuenta=cuenta&&COORD_MAP?COORD_MAP.get(cuenta):null;
-    if(llCuenta){r['lat']=llCuenta[0];r['lon']=llCuenta[1];r['_georef']='cuenta';}
-    else{r['lat']=null;r['lon']=null;r['_georef']=null;}
-  }
-  return r;
-}
-
-// ─── GITHUB PUBLISH ───────────────────────────────────────────────────────
-const GH_OWNER='cristiansaldiviam-blip';
-const GH_REPO='panel-bd';
-const GH_FILE='bd_data.json';
-
-function saveGhToken(val){
-  try{
-    if(val) localStorage.setItem('gh_token',val);
-    else localStorage.removeItem('gh_token');
-    const saved=document.getElementById('gh-token-saved');
-    if(saved) saved.style.display=val?'inline':'none';
-  }catch(e){}
-}
-
-function loadGhToken(){
-  try{ return localStorage.getItem('gh_token')||''; }
-  catch(e){ return ''; }
-}
-
-function initGhToken(){
-  const t=loadGhToken();
-  const inp=document.getElementById('gh-token-input');
-  const saved=document.getElementById('gh-token-saved');
-  if(inp&&t){ inp.value=t; }
-  if(saved&&t){ saved.style.display='inline'; }
-}
-
-async function publishToGithub(){
-  const token=loadGhToken();
-  if(!token){
-    alert('Primero ingresa tu token de GitHub en el campo de arriba.\n\nVe a GitHub → Settings → Developer settings → Personal access tokens → Generate new token (classic) → marca "repo" → copia el token.');
-    return;
-  }
-  const source=(DATA&&DATA.length>0)?DATA:(pendingBD&&pendingBD.length>0?pendingBD:null);
-  if(!source){ alert('Primero carga una BD.'); return; }
-
-  const btn=document.getElementById('gh-publish-btn');
-  const status=document.getElementById('gh-status');
-  btn.disabled=true;
-  btn.textContent='Subiendo...';
-  status.className='gh-status';
-  status.textContent='Subiendo a GitHub...';
-
-  try{
-    // 1. Build JSON
-    const clean=source.map(r=>{
-      const o={};
-      for(const k in r){
-        if(!k.startsWith('_')&&k!=='lat'&&k!=='lon'&&k!=='dias_post_fh'&&k!=='dias_vencimiento'&&k!=='is_duplicate')
-          o[k]=r[k];
-      }
-      return o;
-    });
-    const meta={_exported_at:new Date().toISOString(),_total:clean.length,_rows:clean};
-    const content=btoa(unescape(encodeURIComponent(JSON.stringify(meta))));
-
-    // 2. Get current file SHA (needed to update)
-    const shaRes=await fetch(
-      `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`,
-      {headers:{'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json'}}
-    );
-    let sha=null;
-    if(shaRes.ok){ const shaData=await shaRes.json(); sha=shaData.sha; }
-
-    // 3. Upload file
-    const body={
-      message:'Actualizar BD — '+new Date().toLocaleString()+' ('+clean.length+' tareas)',
-      content:content,
-      ...(sha?{sha}:{})
-    };
-    const uploadRes=await fetch(
-      `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`,
-      {method:'PUT',headers:{
-        'Authorization':'token '+token,
-        'Accept':'application/vnd.github.v3+json',
-        'Content-Type':'application/json'
-      }, body:JSON.stringify(body)}
-    );
-
-    if(!uploadRes.ok){
-      const err=await uploadRes.json();
-      throw new Error(err.message||'Error '+uploadRes.status);
-    }
-
-    status.className='gh-status ok';
-    status.textContent='&#10003; '+clean.length+' tareas publicadas en GitHub — '+new Date().toLocaleTimeString()+' (visible en ~2 min)';
-    btn.textContent='&#8679; Publicar en GitHub';
-
-  }catch(e){
-    status.className='gh-status err';
-    status.textContent='✗ Error: '+e.message;
-    btn.textContent='&#8679; Publicar en GitHub';
-  }
-  btn.disabled=false;
 }
 function buildDataIdx(){
   DATA_IDX=new Map();
@@ -2091,7 +1844,32 @@ function loadBD(input){
               &&!EXCL_CAT.includes((r['Categoría Tarea']||'').trim().toUpperCase())
               &&!(r['Tarea']||'').toUpperCase().includes('DOM'))
       .map(r=>{
-        georefRow(r);
+        const cat=classifyTask(r);
+        if(cat==='AS'){
+          // AS/SLRAT priority: Colector Falla (99% match) → Colector GIS → Numero Cuenta
+          const fallaId=r['ID Colector Falla']?parseInt(r['ID Colector Falla']):null;
+          const llFalla=fallaId&&AS_COORD_MAP?AS_COORD_MAP.get(fallaId):null;
+          if(llFalla){
+            r['lat']=llFalla[0];r['lon']=llFalla[1];r['_georef']='colector falla';
+          } else {
+            const colId=r['ID Colector GIS']?parseInt(r['ID Colector GIS']):null;
+            const llGis=colId&&AS_COORD_MAP?AS_COORD_MAP.get(colId):null;
+            if(llGis){
+              r['lat']=llGis[0];r['lon']=llGis[1];r['_georef']='colector GIS';
+            } else {
+              const cuenta=r['Numero Cuenta']?parseInt(r['Numero Cuenta']):null;
+              const llCuenta=cuenta&&COORD_MAP?COORD_MAP.get(cuenta):null;
+              if(llCuenta){r['lat']=llCuenta[0];r['lon']=llCuenta[1];r['_georef']='cuenta';}
+              else{r['lat']=null;r['lon']=null;r['_georef']=null;}
+            }
+          }
+        } else {
+          // AP/Obra/EH/Grifo: Numero Cuenta
+          const cuenta=r['Numero Cuenta']?parseInt(r['Numero Cuenta']):null;
+          const llCuenta=cuenta&&COORD_MAP?COORD_MAP.get(cuenta):null;
+          if(llCuenta){r['lat']=llCuenta[0];r['lon']=llCuenta[1];r['_georef']='cuenta';}
+          else{r['lat']=null;r['lon']=null;r['_georef']=null;}
+        }
         return r;
       });
     pendingBD=processed;
@@ -2106,7 +1884,6 @@ function applyBD(){showLoadModal();}
 window.addEventListener('DOMContentLoaded',async()=>{
   showSpinner('Cargando coordenadas...');
   initMap();
-  initGhToken();
   await loadCoordMap();
   await loadAsCoordMap();
   const EXCL_OT_INIT=['CAMBIO DE MAP INI. PROPIA','CAMBIO DE MAP NO REGLAMENTADO','TRABAJOS VARIOS EN ARRANQUE','MANTENCION RED AP TRANSPORTE','TRAB PROY REPACION ARRANQUE','INSPECCION TV ALCANTARILLADO','REPOSICION POR DEUDA 2','REPARACION DE ARRANQUE DMA','NUEVOS SERVICIOS','NUEVO SERVICIO','NUEVOS SERVICIOS AP','NUEVOS SERVICIOS AS','CONEXIONES NUEVAS','CONEXION NUEVA'];
