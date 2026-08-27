@@ -667,7 +667,7 @@ function makeIcon(r){
 // ─── MAP INIT ─────────────────────────────────────────────────────────────
 function initMap(){
   MAP=L.map('map',{zoomControl:true,attributionControl:false});
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(MAP);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,subdomains:'abc',attribution:'&copy; OpenStreetMap contributors'}).addTo(MAP);
   setupLasso();
 }
 
