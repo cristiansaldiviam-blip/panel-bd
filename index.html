@@ -531,6 +531,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
           <div class="map-tool-btn" id="infra-rect-btn" title="Selector rectangular (infraestructura)" onclick="toggleInfraRectSelect()">&#9635;</div>
           <div class="map-tool-btn" id="infra-poly-btn" title="Selector por pol&#237;gono (infraestructura)" onclick="toggleInfraPolySelect()">&#11040;</div>
           <div class="map-tool-btn" id="infra-point-btn" title="Selecci&#243;n punto a punto (clic sobre elementos)" onclick="toggleInfraPointSelect()">&#128204;</div>
+          <div class="map-tool-btn danger" title="Eliminar pol&#237;gonos creados (corte / selecci&#243;n)" onclick="eliminarPoligonosCreados()">&#9633;&#10005;</div>
         </div>
         <div class="map-legend" id="map-legend">
           <div class="leg-title">Vencimiento</div>
@@ -648,6 +649,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
           <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;">
             <button class="btn-sm" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);" onclick="agruparInfraSeleccion()">&#128200; Agrupar</button>
             <button class="btn-sm" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);" onclick="generarPoligonoCorte()">&#128308; Polígono de corte (AP)</button>
+            <button class="btn-sm" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);" onclick="eliminarPoligonosCreados()" title="Elimina el/los polígono(s) dibujados en el mapa (corte y selección)">&#128465; Borrar polígonos</button>
             <button class="btn-sm btn-excel" onclick="exportInfraSel()">&#8595; Excel</button>
             <button class="btn-sm btn-clear" onclick="clearInfraSel()">&#10005;</button>
           </div>
@@ -2571,6 +2573,14 @@ function clearInfraSel(){
   infraSelected=new Map();
   if(window._lastInfraPolyShape){MAP.removeLayer(window._lastInfraPolyShape);window._lastInfraPolyShape=null;}
   document.getElementById('infra-sel-panel').classList.remove('open');
+}
+// Borra del mapa cualquier polígono generado: el de corte (sector AP) y el contorno de
+// referencia que queda tras cerrar una selección por polígono.
+function eliminarPoligonosCreados(){
+  let removed=false;
+  if(window._cortePolygon){MAP.removeLayer(window._cortePolygon);window._cortePolygon=null;window._cortePolygonData=null;removed=true;}
+  if(window._lastInfraPolyShape){MAP.removeLayer(window._lastInfraPolyShape);window._lastInfraPolyShape=null;removed=true;}
+  if(!removed)alert('No hay polígonos creados en el mapa para eliminar.');
 }
 function agruparInfraSeleccion(){
   if(!infraSelected.size){alert('Seleccioná elementos de infraestructura primero (con el selector rectangular o de polígono).');return;}
