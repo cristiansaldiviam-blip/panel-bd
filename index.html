@@ -168,9 +168,21 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 .infra-sel-table tr:hover{background:var(--accent-bg);}
 .infra-poly-hint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:950;background:rgba(0,0,0,.75);color:#fff;padding:8px 16px;border-radius:8px;font-size:12px;pointer-events:none;display:none;}
 .infra-poly-hint.show{display:block;}
+.edit-toolbar{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);z-index:950;background:rgba(255,255,255,.97);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:11px;box-shadow:var(--shadow);display:none;align-items:center;gap:8px;}
+.edit-toolbar.show{display:flex;}
 .plan-label{background:transparent;border:none;padding:0;font-size:8.5px;font-weight:600;font-family:'JetBrains Mono',monospace;color:#1a1a1a;white-space:nowrap;text-shadow:0 0 2px #fff,0 0 2px #fff,0 0 2px #fff,0 0 2px #fff;}
 .plan-label-summary{background:#fff;border:2px solid #d1242f;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;color:#d1242f;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.3);}
 .map-tool-btn.on-select{background:#fff7d6;border-color:#d4a72c;}
+.draw-panel{position:absolute;bottom:14px;right:50px;z-index:940;background:rgba(255,255,255,.97);border:1px solid var(--border);border-radius:8px;font-size:11px;backdrop-filter:blur(6px);box-shadow:var(--shadow);padding:8px;width:190px;display:none;}
+.draw-panel.open{display:block;}
+.draw-modes{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:6px;}
+.draw-mode-btn{background:white;border:1px solid var(--border);border-radius:5px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:all .12s;}
+.draw-mode-btn:hover{background:var(--accent-bg);border-color:var(--accent);}
+.draw-mode-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.draw-colors{display:flex;gap:4px;margin-bottom:6px;justify-content:center;}
+.draw-color-sw{width:16px;height:16px;border-radius:50%;cursor:pointer;border:2px solid transparent;}
+.draw-color-sw.active{border-color:#111;}
+.draw-status{font-size:9.5px;color:var(--text3);min-height:24px;line-height:1.3;margin-bottom:4px;}
 .map-tool-btn{background:white;border:1px solid var(--border);border-radius:6px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;box-shadow:var(--shadow);transition:all .12s;}
 .map-tool-btn:hover{background:var(--surface);border-color:var(--accent);}
 .map-tool-btn.active{background:var(--accent-bg);border-color:var(--accent);}
@@ -532,6 +544,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
           <div class="map-tool-btn" id="infra-poly-btn" title="Selector por pol&#237;gono (infraestructura)" onclick="toggleInfraPolySelect()">&#11040;</div>
           <div class="map-tool-btn" id="infra-point-btn" title="Selecci&#243;n punto a punto (clic sobre elementos)" onclick="toggleInfraPointSelect()">&#128204;</div>
           <div class="map-tool-btn danger" title="Eliminar pol&#237;gonos creados (corte / selecci&#243;n)" onclick="eliminarPoligonosCreados()">&#9633;&#10005;</div>
+          <div class="map-tool-sep"></div>
+          <div class="map-tool-btn" id="draw-toggle-btn" title="Herramienta de dibujo y medici&#243;n de distancias" onclick="toggleDrawPanel()">&#9998;</div>
+          <div class="map-tool-btn" id="olor-search-btn" title="Buscar origen de olor: clic en un tramo o c&#225;mara de Red AS con reclamo de olor, recorre hasta 10 tramos aguas arriba" onclick="toggleOlorSearch()">&#128067;</div>
         </div>
         <div class="map-legend" id="map-legend">
           <div class="leg-title">Vencimiento</div>
@@ -550,6 +565,33 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
         </div>
         <div class="lasso-rect" id="lasso-rect" style="display:none;"></div>
         <div class="infra-poly-hint" id="infra-poly-hint">Click para agregar v&#233;rtices &#183; Click cerca del primer punto, doble click o Enter para cerrar &#183; Backspace deshace el &#250;ltimo punto &#183; Esc cancela</div>
+        <div class="edit-toolbar" id="edit-toolbar">
+          <span id="edit-toolbar-label">Arrastr&#225; los puntos rojos a la posici&#243;n correcta</span>
+          <button class="btn-sm btn-excel" onclick="_saveEditTarget()">&#10003; Guardar</button>
+          <button class="btn-sm" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);" onclick="_cancelEditTarget()">&#10005; Cancelar</button>
+        </div>
+        <div class="draw-panel" id="draw-panel">
+          <div class="draw-modes">
+            <button class="draw-mode-btn" id="draw-mode-point" onclick="setDrawMode('point')" title="Punto">&#128204;</button>
+            <button class="draw-mode-btn" id="draw-mode-line" onclick="setDrawMode('line')" title="L&#237;nea">&#9585;</button>
+            <button class="draw-mode-btn" id="draw-mode-polygon" onclick="setDrawMode('polygon')" title="Pol&#237;gono">&#11040;</button>
+            <button class="draw-mode-btn" id="draw-mode-rect" onclick="setDrawMode('rect')" title="Rect&#225;ngulo">&#9635;</button>
+            <button class="draw-mode-btn" id="draw-mode-circle" onclick="setDrawMode('circle')" title="C&#237;rculo">&#9711;</button>
+            <button class="draw-mode-btn" id="draw-mode-text" onclick="setDrawMode('text')" title="Texto">T</button>
+            <button class="draw-mode-btn" id="draw-mode-measure" onclick="setDrawMode('measure')" title="Medir distancia">&#128207;</button>
+            <button class="draw-mode-btn" id="draw-mode-entity" onclick="setDrawMode('entity')" title="Crear entidad (v&#225;lvula virtual: acota el pol&#237;gono de corte dentro o fuera de la red)">&#128296;</button>
+            <button class="draw-mode-btn" onclick="clearDrawings()" title="Borrar todo lo dibujado">&#128465;</button>
+          </div>
+          <div class="draw-colors" id="draw-colors">
+            <span class="draw-color-sw active" data-c="#e8590c" style="background:#e8590c" onclick="setDrawColor('#e8590c',this)"></span>
+            <span class="draw-color-sw" data-c="#d1242f" style="background:#d1242f" onclick="setDrawColor('#d1242f',this)"></span>
+            <span class="draw-color-sw" data-c="#0969da" style="background:#0969da" onclick="setDrawColor('#0969da',this)"></span>
+            <span class="draw-color-sw" data-c="#1a7f37" style="background:#1a7f37" onclick="setDrawColor('#1a7f37',this)"></span>
+            <span class="draw-color-sw" data-c="#8250df" style="background:#8250df" onclick="setDrawColor('#8250df',this)"></span>
+            <span class="draw-color-sw" data-c="#000000" style="background:#000000" onclick="setDrawColor('#000000',this)"></span>
+          </div>
+          <div class="draw-status" id="draw-status">Eleg&#237; una herramienta para dibujar o medir distancias sobre el mapa.</div>
+        </div>
         <div class="geo-search-panel" id="geo-search-panel">
           <div class="geo-search-row">
             <input type="text" id="geo-search-input" placeholder="Buscar dirección..." onkeydown="if(event.key==='Enter')geocodeAddress()"/>
@@ -563,8 +605,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
           </div>
           <div class="infra-body" id="infra-body">
             <div class="infra-search">
-              <input type="text" id="infra-search-input" placeholder="Buscar ID / Cuenta / IDSV..." onkeydown="if(event.key==='Enter')searchInfraById()"/>
-              <button onclick="searchInfraById()">&#128269;</button>
+              <input type="text" id="infra-search-input" placeholder="ID/Cuenta (capas tildadas, varios con coma)" onkeydown="if(event.key==='Enter')searchInfraById()"/>
+              <button onclick="searchInfraById()" title="Busca solo en las capas activas (tildadas) · varios IDs/cuentas separados por coma o espacio">&#128269;</button>
             </div>
             <div class="infra-search-status" id="infra-search-status"></div>
             <div class="infra-sep"></div>
@@ -574,8 +616,25 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
             <label class="infra-row"><input type="checkbox" id="infra-cb-camaras_as" onchange="toggleInfraLayer('camaras_as',this)"><span class="infra-dot" style="background:#1a7f37"></span>Cámaras AS<span class="infra-status" id="infra-status-camaras_as"></span></label>
             <label class="infra-row"><input type="checkbox" id="infra-cb-grifos" onchange="toggleInfraLayer('grifos',this)"><span class="infra-dot" style="background:#cf222e"></span>Grifos<span class="infra-status" id="infra-status-grifos"></span></label>
             <label class="infra-row"><input type="checkbox" id="infra-cb-valvulas_ap" onchange="toggleInfraLayer('valvulas_ap',this)"><span class="infra-dot" style="background:#8250df"></span>Válvulas AP<span class="infra-status" id="infra-status-valvulas_ap"></span></label>
+            <label class="infra-row"><input type="checkbox" id="infra-cb-valvulas_grifo" onchange="toggleInfraLayer('valvulas_grifo',this)"><span class="infra-dot" style="background:#00c5ff"></span>Válvula de Grifo<span class="infra-status" id="infra-status-valvulas_grifo"></span></label>
             <label class="infra-row"><input type="checkbox" id="infra-cb-red_as_flow" onchange="toggleInfraLayer('red_as_flow',this)"><span class="infra-dot" style="background:#9a6700;transform:rotate(45deg);"></span>Red AS · Flujo<span class="infra-status" id="infra-status-red_as_flow"></span></label>
             <label class="infra-row"><input type="checkbox" id="infra-cb-clientes" onchange="toggleInfraLayer('clientes',this)"><span class="infra-dot" style="background:#0550ae"></span>Clientes (Talagante)<span class="infra-status" id="infra-status-clientes"></span></label>
+            <label class="infra-row" title="Se descarga por sectores la primera vez y queda guardada en este navegador (no vuelve a pedirse a internet salvo que uses 'Recargar')."><input type="checkbox" id="infra-cb-vialidad" onchange="toggleInfraLayer('vialidad',this)"><span class="infra-dot" style="background:#e8590c"></span>Vialidad (OSM aprox.)<span class="infra-status" id="infra-status-vialidad"></span><button class="row-x-btn" style="margin-left:2px;" title="Recargar Vialidad para la vista actual (ignora la caché guardada)" onclick="event.preventDefault();recargarVialidad();">&#8635;</button></label>
+            <div class="infra-sep"></div>
+            <div class="infra-sub-hdr">Editor de red (se guarda en el archivo)</div>
+            <select id="edit-entity-type" style="width:100%;font-size:10px;padding:4px;margin-bottom:4px;border:1px solid var(--border);border-radius:5px;">
+              <option value="valvulas_ap">Válvula AP</option>
+              <option value="grifos">Grifo</option>
+              <option value="camaras_as">Cámara AS</option>
+              <option value="red_ap">Tramo Red AP</option>
+              <option value="red_as">Tramo Red AS</option>
+            </select>
+            <div style="display:flex;gap:4px;margin-bottom:4px;">
+              <button class="draw-mode-btn" id="edit-add-btn" style="flex:1;width:auto;font-size:10px;" onclick="toggleAddEntityMode()" title="Agregar una entidad nueva del tipo elegido arriba">&#10133; Agregar</button>
+              <button class="draw-mode-btn" id="edit-move-btn" style="flex:1;width:auto;font-size:10px;" onclick="toggleMoveMode()" title="Clic en un elemento existente para arrastrarlo a su posición correcta">&#9998; Corregir</button>
+            </div>
+            <div class="draw-status" id="edit-status" style="min-height:auto;"></div>
+            <button class="infra-export-btn" id="edit-save-btn" onclick="guardarCambiosEnArchivo()" disabled>&#128190; Guardar cambios en el archivo (0)</button>
             <div class="infra-sep"></div>
             <div class="infra-sub-hdr">Subtipos Red AP (color)</div>
             <div style="font-size:9px;line-height:1.6;color:var(--text2);">
@@ -648,7 +707,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
           <span id="infra-sel-cnt" class="badge b-sc"></span>
           <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;">
             <button class="btn-sm" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);" onclick="agruparInfraSeleccion()">&#128200; Agrupar</button>
-            <button class="btn-sm" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);" onclick="generarPoligonoCorte()">&#128308; Polígono de corte (AP)</button>
+            <button class="btn-sm" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);" onclick="marcarRecorridoCorte()" title="Recorre la red desde lo seleccionado hasta las válvulas más cercanas y marca los tramos en rojo (no dibuja el polígono todavía).">&#128308; Marcar recorrido</button>
+            <button class="btn-sm" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);" onclick="dibujarPoligonoCorte()" title="Dibuja el polígono de corte a partir de lo marcado con 'Marcar recorrido'.">&#128311; Dibujar polígono</button>
             <button class="btn-sm" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);" onclick="eliminarPoligonosCreados()" title="Elimina el/los polígono(s) dibujados en el mapa (corte y selección)">&#128465; Borrar polígonos</button>
             <button class="btn-sm btn-excel" onclick="exportInfraSel()">&#8595; Excel</button>
             <button class="btn-sm btn-clear" onclick="clearInfraSel()">&#10005;</button>
@@ -656,7 +716,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
         </div>
         <div class="infra-sel-panel-body">
           <table class="infra-sel-table"><thead><tr>
-            <th>Capa</th><th>ID</th><th>Material</th><th>Di&#225;metro</th><th>Longitud</th><th>Grupo</th><th></th>
+            <th>Capa</th><th>ID</th><th>Direcci&#243;n</th><th>Material</th><th>Di&#225;metro</th><th>Longitud</th><th>Grupo</th><th></th>
           </tr></thead><tbody id="infra-sel-tbody"></tbody></table>
         </div>
       </div>
@@ -873,11 +933,13 @@ function makeIcon(r){
 
 // ─── MAP INIT ─────────────────────────────────────────────────────────────
 function initMap(){
-  MAP=L.map('map',{zoomControl:true,attributionControl:false});
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,subdomains:'abc',attribution:'&copy; OpenStreetMap contributors'}).addTo(MAP);
+  MAP=L.map('map',{zoomControl:true,attributionControl:false,maxZoom:22});
+  MAP.setView([-33.6653,-70.9318],13); // Centro de Talagante por defecto, hasta que se cargue BD/otra vista
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:22,maxNativeZoom:19,subdomains:'abc',attribution:'&copy; OpenStreetMap contributors'}).addTo(MAP);
   setupLasso();
   _setupInfraRectSelect();
   _setupInfraPolySelect();
+  _setupDrawTools();
 }
 
 // ─── CAPAS DE INFRAESTRUCTURA (Red AP/AS, Cámaras, Grifos, Válvulas) ──────
@@ -898,8 +960,10 @@ const INFRA_CONFIG={
   camaras_as:  {label:'Cámara AS',   color:'#1a7f37', type:'point', radius:5, loaded:false, layer:null},
   grifos:      {label:'Grifo',       color:'#cf222e', type:'point', radius:5.5, loaded:false, layer:null},
   valvulas_ap: {label:'Válvula AP',  color:'#8250df', type:'point', radius:6, loaded:false, layer:null},
+  valvulas_grifo: {label:'Válvula de Grifo', color:'#00c5ff', type:'point', radius:5.5, loaded:false, layer:null},
   red_as_flow: {label:'Red AS · Flujo', color:'#9a6700', type:'flow', loaded:false, layer:null},
   clientes:    {label:'Cliente',     color:'#0550ae', type:'clientmap', radius:3.5, loaded:false, layer:null},
+  vialidad:    {label:'Vialidad',    color:'#e8590c', type:'osmroads', loaded:false, layer:null},
 };
 
 // Subtipos de tramo (campo SUBTYPE_). Los nombres son una convención habitual SISS/Chile;
@@ -976,7 +1040,7 @@ function _buildFlowArrows(gj,color){
       const ux=dLon/len, uy=dLat/len; // vector unitario dirección de flujo
       const px=-uy, py=ux; // perpendicular
       const mx=(lon0+lon1)/2, my=(lat0+lat1)/2;
-      const size=Math.min(len*0.28,0.00003); // tamaño proporcional, más pequeño
+      const size=Math.min(len*0.28,0.00003); // tamaño original, sin agrandar
       const tip=[my+uy*size,mx+ux*size];
       const b1=[my-uy*size*0.5+py*size*0.6, mx-ux*size*0.5+px*size*0.6];
       const b2=[my-uy*size*0.5-py*size*0.6, mx-ux*size*0.5-px*size*0.6];
@@ -1014,6 +1078,26 @@ async function toggleInfraLayer(key,checkbox){
           cfg.layer=_buildFlowArrows(gj,cfg.color);
           cfg.loaded=true;
           if(statusEl)statusEl.textContent=gj.features.length.toLocaleString();
+        } else if(key==='vialidad'){
+          if(MAP.getZoom()<VIALIDAD_MIN_ZOOM){
+            alert('Acercate más en el mapa (zoom ≥ '+VIALIDAD_MIN_ZOOM+') antes de activar Vialidad, para no traer una consulta demasiado grande a OpenStreetMap.');
+            checkbox.checked=false;checkbox.disabled=false;
+            if(statusEl)statusEl.textContent='';
+            return;
+          }
+          const osmData=await _fetchVialidadOSM();
+          cfg.layer=_buildVialidadLayer(osmData);
+          cfg.loaded=true;
+          if(statusEl)statusEl.textContent=(osmData.elements||[]).length.toLocaleString();
+        } else if(key==='valvulas_grifo'){
+          const fullGj=await _getInfraGeoJSON('valvulas_ap'); // mismo dataset base, se filtra al renderizar
+          const gj={type:'FeatureCollection',features:fullGj.features.filter(f=>(f.properties.DESCRIPCION||'')==='VALVULA GRIFO')};
+          cfg.layer=L.geoJSON(gj,{
+            pointToLayer:(f,latlng)=>L.circleMarker(latlng,{radius:cfg.radius,color:'#fff',weight:1,fillColor:cfg.color,fillOpacity:.9,renderer:_infraRenderer()}),
+            onEachFeature:(f,l)=>{l.bindPopup(()=>_buildInfraPopup(f.properties,cfg.label),{maxWidth:270});_bindInfraEntityClick(key,l);}
+          });
+          cfg.loaded=true;
+          if(statusEl)statusEl.textContent=gj.features.length.toLocaleString();
         } else {
           const gj=await _getInfraGeoJSON(key);
           if(cfg.type==='line'){
@@ -1023,17 +1107,22 @@ async function toggleInfraLayer(key,checkbox){
               onEachFeature:(f,l)=>{l.bindPopup(()=>_buildInfraPopup(f.properties,cfg.label),{maxWidth:270});_bindInfraEntityClick(key,l);}
             });
           } else {
+            const isCamara=key==='camaras_as';
             cfg.layer=L.geoJSON(gj,{
-              pointToLayer:(f,latlng)=>L.circleMarker(latlng,{radius:cfg.radius,color:'#fff',weight:1,fillColor:cfg.color,fillOpacity:.9,renderer:_infraRenderer()}),
+              filter:key==='valvulas_ap'?(f=>(f.properties.DESCRIPCION||'')!=='VALVULA GRIFO'):undefined,
+              pointToLayer:(f,latlng)=>L.circleMarker(latlng,isCamara
+                ?{radius:cfg.radius+1,color:cfg.color,weight:2,fillColor:'#ffffff',fillOpacity:0,renderer:_infraRenderer()}
+                :{radius:cfg.radius,color:'#fff',weight:1,fillColor:cfg.color,fillOpacity:.9,renderer:_infraRenderer()}),
               onEachFeature:(f,l)=>{l.bindPopup(()=>_buildInfraPopup(f.properties,cfg.label),{maxWidth:270});_bindInfraEntityClick(key,l);}
             });
           }
           cfg.loaded=true;
-          if(statusEl)statusEl.textContent=gj.features.length.toLocaleString();
+          if(statusEl)statusEl.textContent=(key==='valvulas_ap'?gj.features.filter(f=>(f.properties.DESCRIPCION||'')!=='VALVULA GRIFO').length:gj.features.length).toLocaleString();
         }
       }catch(e){
         console.error('Error cargando capa '+key,e);
-        if(statusEl)statusEl.textContent='⚠ error';
+        if(key==='vialidad'){_handleVialidadError(e,statusEl);}
+        else if(statusEl)statusEl.textContent='⚠ error';
         checkbox.checked=false;checkbox.disabled=false;
         return;
       }
@@ -1049,6 +1138,7 @@ async function toggleInfraLayer(key,checkbox){
 async function _ensureInfraLoaded(key){
   if(key==='clientes'){ await loadClientesTalagante(); return; }
   if(key==='red_as_flow'){ await _getInfraGeoJSON('red_as'); return; }
+  if(key==='valvulas_grifo'){ await _getInfraGeoJSON('valvulas_ap'); return; }
   if(!INFRA_CONFIG[key]._gj) await _getInfraGeoJSON(key);
 }
 // Activa visualmente una capa (tilda el checkbox y la agrega al mapa) si aún no está activa
@@ -1067,64 +1157,84 @@ function _autoEnableInfra(key){
 async function searchInfraById(){
   const inputEl=document.getElementById('infra-search-input');
   const statusEl=document.getElementById('infra-search-status');
-  const q=(inputEl.value||'').trim();
-  if(!q){statusEl.textContent='';return;}
+  const raw=(inputEl.value||'').trim();
+  if(!raw){statusEl.textContent='';return;}
+  const tokens=[...new Set(raw.split(/[,\s]+/).map(t=>t.trim()).filter(Boolean))];
+  if(tokens.length<=1){
+    return _searchInfraByIdSingle(raw,statusEl);
+  }
+  // Búsqueda concatenada: varios IDs/cuentas a la vez, separados por coma o espacio.
+  statusEl.textContent='Buscando '+tokens.length+' ID(s)…';
+  try{
+    let foundCount=0;
+    const notFound=[];
+    const boundsPts=[];
+    for(const tok of tokens){
+      const ll=await _findAndSelectById(tok);
+      if(ll){foundCount++;boundsPts.push(ll);}
+      else notFound.push(tok);
+    }
+    if(boundsPts.length)MAP.fitBounds(boundsPts,{padding:[60,60]});
+    renderInfraSelPanel();
+    statusEl.textContent='&#10003; '+foundCount+' de '+tokens.length+' encontrados'+(notFound.length?(' · sin match: '+notFound.join(', ')):'');
+  }catch(e){
+    console.error('Error en búsqueda concatenada por ID',e);
+    statusEl.textContent='&#9888; Error al buscar';
+  }
+}
+// Busca un único ID/cuenta y lo agrega a la selección de infraestructura (tabla de abajo).
+// Devuelve [lat,lon] si lo encontró, o null si no.
+async function _findAndSelectById(q){
+  const activeKeys=_activeInfraSelectableKeys();
+  if(!activeKeys.length)return null;
+  const idFields=['IDENTIFICADORTRAMO','IDENTIFICADORELEMENTO','IDSV','OBJECTID','CODIGOBIT','CUENTA'];
+  for(const key of activeKeys){
+    const cfg=INFRA_CONFIG[key];
+    if(!cfg.layer)continue;
+    let found=null;
+    cfg.layer.eachLayer(l=>{
+      if(found||!l.feature)return;
+      const p=l.feature.properties;
+      if(idFields.some(fld=>p[fld]!==undefined&&String(p[fld])===q))found=l;
+    });
+    if(found){
+      _addInfraSelection(key,found);
+      const pts=_infraGeometryPoints(found);
+      return pts.length?[pts[Math.floor(pts.length/2)].lat,pts[Math.floor(pts.length/2)].lng]:null;
+    }
+  }
+  return null;
+}
+// Comportamiento original: un solo ID, vuela y abre popup (sin pasar por la tabla de selección).
+async function _searchInfraByIdSingle(q,statusEl){
   statusEl.textContent='Buscando…';
   try{
-    // 1) Clientes Talagante (Nº Cuenta, con dirección)
-    await loadClientesTalagante();
-    if(CLIENTES_TALAGANTE_MAP && CLIENTES_TALAGANTE_MAP.has(q)){
-      const info=CLIENTES_TALAGANTE_MAP.get(q);
-      const ll=[info.lat,info.lon];
-      _autoEnableInfra('clientes');
-      MAP.flyTo(ll,18,{duration:.6});
-      L.popup({maxWidth:240}).setLatLng(ll)
-        .setContent(`<div style="font-size:12px;"><b>N&#176; Cuenta:</b> ${q}<br><b>Direcci&#243;n:</b> ${info.direccion||'—'}</div>`).openOn(MAP);
-      statusEl.textContent='&#10003; Cliente encontrado';
+    const activeKeys=_activeInfraSelectableKeys();
+    if(!activeKeys.length){
+      statusEl.textContent='⚠ Activá al menos una capa (tildá su casillero) antes de buscar.';
       return;
     }
-    // 1b) Clientes (Nº Cuenta AP — dataset general, sin dirección)
-    await loadCoordMap();
-    if(COORD_MAP && COORD_MAP.has(q)){
-      const ll=COORD_MAP.get(q);
-      MAP.flyTo(ll,18,{duration:.6});
-      L.popup({maxWidth:220}).setLatLng(ll)
-        .setContent(`<div style="font-size:12px;"><b>Cliente</b><br>N&#176; Cuenta: ${q}</div>`).openOn(MAP);
-      statusEl.textContent='&#10003; Cliente encontrado';
-      return;
-    }
-    // 2) Colectores AS (ID Colector Falla / GIS georreferenciación)
-    await loadAsCoordMap();
-    if(AS_COORD_MAP && AS_COORD_MAP.has(q)){
-      const ll=AS_COORD_MAP.get(q);
-      MAP.flyTo(ll,18,{duration:.6});
-      L.popup({maxWidth:220}).setLatLng(ll)
-        .setContent(`<div style="font-size:12px;"><b>Colector AS</b><br>ID: ${q}</div>`).openOn(MAP);
-      statusEl.textContent='&#10003; Colector encontrado';
-      return;
-    }
-    // 3) Capas de infraestructura: IDENTIFICADORTRAMO / IDENTIFICADORELEMENTO / IDSV / OBJECTID
-    const searchKeys=['red_ap','red_as','camaras_as','grifos','valvulas_ap'];
-    const idFields=['IDENTIFICADORTRAMO','IDENTIFICADORELEMENTO','IDSV','OBJECTID','CODIGOBIT'];
-    for(const key of searchKeys){
+    const idFields=['IDENTIFICADORTRAMO','IDENTIFICADORELEMENTO','IDSV','OBJECTID','CODIGOBIT','CUENTA'];
+    for(const key of activeKeys){
       statusEl.textContent='Buscando en '+INFRA_CONFIG[key].label+'…';
-      await _ensureInfraLoaded(key);
-      const gj=INFRA_CONFIG[key]._gj;
-      const found=gj.features.find(f=>idFields.some(fld=>f.properties[fld]!==undefined&&String(f.properties[fld])===q));
+      const cfg=INFRA_CONFIG[key];
+      if(!cfg.layer)continue;
+      let found=null;
+      cfg.layer.eachLayer(l=>{
+        if(found||!l.feature)return;
+        const p=l.feature.properties;
+        if(idFields.some(fld=>p[fld]!==undefined&&String(p[fld])===q))found=l;
+      });
       if(found){
-        _autoEnableInfra(key);
-        const geom=found.geometry;
-        let center;
-        if(geom.type==='Point'){ center=[geom.coordinates[1],geom.coordinates[0]]; }
-        else{ const line=geom.coordinates[0]; const mid=line[Math.floor(line.length/2)]; center=[mid[1],mid[0]]; }
-        MAP.flyTo(center,18,{duration:.6});
-        L.popup({maxWidth:270}).setLatLng(center)
-          .setContent(_buildInfraPopup(found.properties,INFRA_CONFIG[key].label)).openOn(MAP);
-        statusEl.textContent='&#10003; Encontrado en '+INFRA_CONFIG[key].label;
+        const pts=_infraGeometryPoints(found);
+        const center=pts.length?[pts[Math.floor(pts.length/2)].lat,pts[Math.floor(pts.length/2)].lng]:null;
+        if(center)MAP.flyTo(center,18,{duration:.6});
+        found.openPopup&&found.openPopup();
+        statusEl.textContent='&#10003; Encontrado en '+cfg.label;
         return;
       }
     }
-    statusEl.textContent='&#10007; Sin resultados';
+    statusEl.textContent='&#10007; Sin resultados en las capas activas';
   }catch(e){
     console.error('Error en búsqueda por ID',e);
     statusEl.textContent='&#9888; Error al buscar';
@@ -1653,6 +1763,10 @@ async function idbGet(key){
 }
 async function idbSet(key,val){
   try{const db=await idbOpen();return new Promise((res,rej)=>{const tx=db.transaction(IDB_STORE,'readwrite');tx.objectStore(IDB_STORE).put(val,key);tx.oncomplete=res;tx.onerror=rej;});}
+  catch(e){}
+}
+async function idbDelete(key){
+  try{const db=await idbOpen();return new Promise((res,rej)=>{const tx=db.transaction(IDB_STORE,'readwrite');tx.objectStore(IDB_STORE).delete(key);tx.oncomplete=res;tx.onerror=rej;});}
   catch(e){}
 }
 async function loadCoordMapCached(cacheKey,b64Data,targetMap,mapName){
@@ -2265,6 +2379,7 @@ function toggleSidebar(){
   setTimeout(()=>{ if(MAP)MAP.invalidateSize(); },200);
 }
 
+
 // ─── LASSO ────────────────────────────────────────────────────────────────
 function setupLasso(){
   const mapEl=document.getElementById('map');
@@ -2335,6 +2450,9 @@ function toggleLasso(){
   if(lassoActive){
     infraRectActive=false;document.getElementById('infra-rect-btn').classList.remove('active');
     infraPolyActive=false;_cancelInfraPolygon();document.getElementById('infra-poly-btn').classList.remove('active');
+    if(drawMode)setDrawMode(null);
+    _deactivateEditTools();
+    if(olorSearchActive){olorSearchActive=false;const osb=document.getElementById('olor-search-btn');if(osb)osb.classList.remove('active');_clearOlorHighlight();}
   }
   document.getElementById('lasso-btn').classList.toggle('active',lassoActive);
   document.getElementById('map').style.cursor=lassoActive?'crosshair':'';
@@ -2346,7 +2464,7 @@ let INFRA_ITEM_GROUP=new Map(); // "key_id" -> nombreGrupo
 let infraPointSelectActive=false;
 
 function _activeInfraSelectableKeys(){
-  return ['red_ap','red_as','camaras_as','grifos','valvulas_ap','clientes'].filter(k=>{
+  return ['red_ap','red_as','camaras_as','grifos','valvulas_ap','valvulas_grifo','clientes','vialidad'].filter(k=>{
     const cfg=INFRA_CONFIG[k];
     return cfg&&cfg.loaded&&cfg.layer&&MAP.hasLayer(cfg.layer);
   });
@@ -2373,10 +2491,14 @@ function _addInfraSelection(key,layerObj){
   const cfg=INFRA_CONFIG[key];
   infraSelected.set(skey,{key,id,props,layerObj,cfg});
   if(layerObj.setStyle){
-    if(!layerObj._origStyle)layerObj._origStyle={color:layerObj.options.color,weight:layerObj.options.weight,fillColor:layerObj.options.fillColor,radius:layerObj.options.radius};
+    if(!layerObj._origStyle)layerObj._origStyle={color:layerObj.options.color,weight:layerObj.options.weight,fillColor:layerObj.options.fillColor,radius:layerObj.options.radius,fillOpacity:layerObj.options.fillOpacity};
     if(cfg.type==='line')layerObj.setStyle({color:'#ffd60a',weight:Math.max(layerObj.options.weight,4)});
-    else layerObj.setStyle({fillColor:'#ffd60a',color:'#000'});
+    else layerObj.setStyle({fillColor:'#ffd60a',color:'#000',fillOpacity:.95});
     layerObj.bringToFront&&layerObj.bringToFront();
+  }
+  if(key==='valvulas_ap'||key==='valvulas_grifo'||key==='red_ap'||key==='grifos'){
+    if(window._cortePolygonActive)_maybeAutoUpdateCortePolygon();
+    else window._corteTraceReady=false;
   }
 }
 function _restoreInfraStyle(item){
@@ -2389,6 +2511,16 @@ function _restoreInfraStyle(item){
 function _bindInfraEntityClick(key,layerObj){
   layerObj.off('click');
   layerObj.on('click',function(e){
+    if(olorSearchActive&&(key==='red_as'||key==='camaras_as')){
+      L.DomEvent.stopPropagation(e);
+      _buscarOrigenOlor(key,layerObj);
+      return;
+    }
+    if(moveModeActive){
+      L.DomEvent.stopPropagation(e);
+      _startEditTarget(key,layerObj);
+      return;
+    }
     const props=layerObj.feature?layerObj.feature.properties:null;
     if(!props){layerObj.openPopup&&layerObj.openPopup();return;}
     const id=_infraFeatureId(key,props);
@@ -2464,6 +2596,9 @@ function toggleInfraRectSelect(){
     lassoActive=false;document.getElementById('lasso-btn').classList.remove('active');
     infraPolyActive=false;_cancelInfraPolygon();document.getElementById('infra-poly-btn').classList.remove('active');
     infraPointSelectActive=false;document.getElementById('infra-point-btn').classList.remove('on-select');
+    if(drawMode)setDrawMode(null);
+    _deactivateEditTools();
+    if(olorSearchActive){olorSearchActive=false;const osb=document.getElementById('olor-search-btn');if(osb)osb.classList.remove('active');_clearOlorHighlight();}
   }
   document.getElementById('infra-rect-btn').classList.toggle('active',infraRectActive);
   document.getElementById('map').style.cursor=infraRectActive?'crosshair':'';
@@ -2552,6 +2687,9 @@ function toggleInfraPolySelect(){
     lassoActive=false;document.getElementById('lasso-btn').classList.remove('active');
     infraRectActive=false;document.getElementById('infra-rect-btn').classList.remove('active');
     infraPointSelectActive=false;document.getElementById('infra-point-btn').classList.remove('on-select');
+    if(drawMode)setDrawMode(null);
+    _deactivateEditTools();
+    if(olorSearchActive){olorSearchActive=false;const osb=document.getElementById('olor-search-btn');if(osb)osb.classList.remove('active');_clearOlorHighlight();}
     infraPolyPoints=[];
     document.getElementById('infra-poly-hint').classList.add('show');
   } else {
@@ -2569,6 +2707,9 @@ function toggleInfraPointSelect(){
     lassoActive=false;document.getElementById('lasso-btn').classList.remove('active');
     infraRectActive=false;document.getElementById('infra-rect-btn').classList.remove('active');
     infraPolyActive=false;_cancelInfraPolygon();document.getElementById('infra-poly-btn').classList.remove('active');
+    if(drawMode)setDrawMode(null);
+    _deactivateEditTools();
+    if(olorSearchActive){olorSearchActive=false;const osb=document.getElementById('olor-search-btn');if(osb)osb.classList.remove('active');_clearOlorHighlight();}
   }
   document.getElementById('infra-point-btn').classList.toggle('on-select',infraPointSelectActive);
 }
@@ -2591,6 +2732,7 @@ function renderInfraSelPanel(){
     return `<tr>
       <td>${item.cfg.label}</td>
       <td style="font-family:'JetBrains Mono',monospace;font-size:10px;">${item.id}</td>
+      <td style="font-size:10px;">${p.DIRECCION||'—'}</td>
       <td>${material}</td>
       <td>${diametro}</td>
       <td>${longitud}</td>
@@ -2606,12 +2748,19 @@ function quitarInfraSel(skey){
   infraSelected.delete(skey);
   INFRA_ITEM_GROUP.delete(skey);
   renderInfraSelPanel();
+  if(item.key==='valvulas_ap'||item.key==='valvulas_grifo'||item.key==='red_ap'||item.key==='grifos'){
+    if(window._cortePolygonActive)_maybeAutoUpdateCortePolygon();
+    else window._corteTraceReady=false;
+  }
 }
 function clearInfraSel(){
   infraSelected.forEach(item=>_restoreInfraStyle(item));
   infraSelected=new Map();
   if(window._lastInfraPolyShape){MAP.removeLayer(window._lastInfraPolyShape);window._lastInfraPolyShape=null;}
   document.getElementById('infra-sel-panel').classList.remove('open');
+  window._cortePolygonActive=false;
+  window._corteTraceReady=false;
+  window._corteTraceItems=null;
 }
 // Borra del mapa cualquier polígono generado: el de corte (sector AP) y el contorno de
 // referencia que queda tras cerrar una selección por polígono.
@@ -2619,8 +2768,658 @@ function eliminarPoligonosCreados(){
   let removed=false;
   if(window._cortePolygon){MAP.removeLayer(window._cortePolygon);window._cortePolygon=null;window._cortePolygonData=null;removed=true;}
   if(window._lastInfraPolyShape){MAP.removeLayer(window._lastInfraPolyShape);window._lastInfraPolyShape=null;removed=true;}
+  window._cortePolygonActive=false;
+  window._corteTraceReady=false;
+  window._corteTraceItems=null;
+  window._corteTraceManiobrarValvulas=null;
+  _clearManiobrarHighlight();
+  _clearTramoHighlight();
   if(!removed)alert('No hay polígonos creados en el mapa para eliminar.');
 }
+function _clearManiobrarHighlight(){
+  ['valvulas_ap','valvulas_grifo'].forEach(key=>{
+    const cfg=INFRA_CONFIG[key];
+    if(!cfg.layer)return;
+    cfg.layer.eachLayer(l=>{
+      l.setStyle({radius:cfg.radius,fillColor:cfg.color,color:'#fff',weight:1,fillOpacity:.9});
+    });
+  });
+}
+// Devuelve a su color/grosor normal (por subtipo) los tramos de Red AP que hayan quedado
+// marcados en rojo por "Marcar recorrido" / el trazado del polígono de corte.
+function _clearTramoHighlight(){
+  const cfg=INFRA_CONFIG.red_ap;
+  if(!cfg.layer)return;
+  cfg.layer.eachLayer(l=>{
+    const p=l.feature.properties;
+    l.setStyle({color:_infraLineColor('red_ap',p),weight:Math.min(1+((p.DIAMETRO||100)/150),5),opacity:.75});
+  });
+}
+
+// ─── HERRAMIENTA DE DIBUJO Y MEDICIÓN DE DISTANCIAS ────────────────────────
+let drawMode=null; // null|'point'|'line'|'polygon'|'rect'|'circle'|'text'|'measure'
+let drawColor='#e8590c';
+let drawnItemsLayer=null;
+let _drawPoints=[],_drawTempLine=null,_drawVertexMarkers=[];
+let _drawRectStart=null,_drawCircleCenter=null;
+let _measureTooltip=null;
+
+function _ensureDrawnLayer(){
+  if(!drawnItemsLayer)drawnItemsLayer=L.layerGroup().addTo(MAP);
+  return drawnItemsLayer;
+}
+function toggleDrawPanel(){
+  const panel=document.getElementById('draw-panel');
+  const btn=document.getElementById('draw-toggle-btn');
+  const open=panel.classList.toggle('open');
+  btn.classList.toggle('active',open);
+  if(!open)setDrawMode(null);
+}
+function _drawModeHint(mode){
+  const hints={
+    point:'Clic en el mapa para colocar un punto.',
+    line:'Clic para agregar vértices · doble clic o Enter para terminar · Backspace deshace.',
+    polygon:'Clic para agregar vértices · doble clic o Enter para cerrar · Backspace deshace.',
+    rect:'Clic y arrastrá para dibujar el rectángulo.',
+    circle:'Clic en el centro y arrastrá para definir el radio.',
+    text:'Clic donde querés colocar el texto.',
+    measure:'Clic para medir · doble clic o Enter para terminar · Backspace deshace.',
+    entity:'Clic para crear una válvula virtual (dentro o fuera de la red). Actúa como límite real al generar un Polígono de corte, aunque no exista en la base de datos.'
+  };
+  return hints[mode]||'Elegí una herramienta para dibujar o medir distancias sobre el mapa.';
+}
+function setDrawMode(mode){
+  _cancelDrawInProgress();
+  if(mode){
+    lassoActive=false;const lb=document.getElementById('lasso-btn');if(lb)lb.classList.remove('active');
+    infraRectActive=false;const ib=document.getElementById('infra-rect-btn');if(ib)ib.classList.remove('active');
+    infraPolyActive=false;_cancelInfraPolygon();const ipb=document.getElementById('infra-poly-btn');if(ipb)ipb.classList.remove('active');
+    infraPointSelectActive=false;const ipsb=document.getElementById('infra-point-btn');if(ipsb)ipsb.classList.remove('on-select');
+    _deactivateEditTools();
+    if(olorSearchActive){olorSearchActive=false;const osb=document.getElementById('olor-search-btn');if(osb)osb.classList.remove('active');_clearOlorHighlight();}
+  }
+  drawMode=(drawMode===mode)?null:mode;
+  ['point','line','polygon','rect','circle','text','measure','entity'].forEach(m=>{
+    const b=document.getElementById('draw-mode-'+m);
+    if(b)b.classList.toggle('active',drawMode===m);
+  });
+  document.getElementById('map').style.cursor=drawMode?'crosshair':'';
+  const statusEl=document.getElementById('draw-status');
+  if(statusEl)statusEl.textContent=_drawModeHint(drawMode);
+}
+function setDrawColor(c,el){
+  drawColor=c;
+  document.querySelectorAll('.draw-color-sw').forEach(s=>s.classList.remove('active'));
+  if(el)el.classList.add('active');
+}
+function _fmtDist(m){
+  return m>=1000?(m/1000).toFixed(2)+' km':m.toFixed(1)+' m';
+}
+function _drawTotalDistance(pts){
+  let d=0;for(let i=1;i<pts.length;i++)d+=pts[i-1].distanceTo(pts[i]);
+  return d;
+}
+function _drawAddPoint(latlng){
+  const mk=L.circleMarker(latlng,{radius:6,color:'#fff',weight:2,fillColor:drawColor,fillOpacity:1}).addTo(_ensureDrawnLayer());
+  mk.bindPopup('<div style="font-size:12px;">Punto marcado</div>');
+}
+// "Crear entidad": coloca una válvula virtual (no está en la base de datos) que funciona como
+// límite real cuando se genera un Polígono de corte — sirve para simular un cierre que todavía
+// no existe físicamente, dentro o fuera del trazado de la red.
+let _customValveSeq=0;
+function _drawAddEntity(latlng){
+  _customValveSeq++;
+  const idLabel='VIRTUAL-'+_customValveSeq;
+  const mk=L.circleMarker(latlng,{radius:6.5,color:'#fff',weight:2,fillColor:'#8250df',fillOpacity:1}).addTo(_ensureDrawnLayer());
+  mk.isCustomValve=true;
+  mk.customValveId=idLabel;
+  mk.bindPopup(`<div style="font-size:12px;"><b>&#128296; Válvula virtual</b><br>${idLabel}<br><span style="color:#666;">Creada manualmente — actúa como límite al generar un polígono de corte.</span><br><button class="row-x-btn" style="margin-top:4px;" onclick="window._removeCustomValve('${idLabel}')">&#10005; Quitar</button></div>`);
+  mk.on('click',function(){ if(drawMode!=='entity')mk.openPopup(); });
+  if(window._cortePolygonActive)_maybeAutoUpdateCortePolygon();
+  else window._corteTraceReady=false;
+}
+window._removeCustomValve=function(idLabel){
+  if(!drawnItemsLayer)return;
+  drawnItemsLayer.eachLayer(l=>{
+    if(l.isCustomValve&&l.customValveId===idLabel)drawnItemsLayer.removeLayer(l);
+  });
+  if(window._cortePolygonActive)_maybeAutoUpdateCortePolygon();
+  else window._corteTraceReady=false;
+};
+function _drawAddText(latlng){
+  const txt=prompt('Texto a mostrar en el mapa:');
+  if(!txt)return;
+  const safe=txt.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const icon=L.divIcon({className:'',html:`<div style="background:#fff;border:1.5px solid ${drawColor};color:${drawColor};font-weight:700;font-size:12px;padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.25);">${safe}</div>`,iconSize:null});
+  L.marker(latlng,{icon}).addTo(_ensureDrawnLayer());
+}
+function _drawRedrawTempPath(){
+  if(_drawTempLine){MAP.removeLayer(_drawTempLine);_drawTempLine=null;}
+  _drawVertexMarkers.forEach(m=>MAP.removeLayer(m));_drawVertexMarkers=[];
+  if(!_drawPoints.length)return;
+  if(drawMode==='polygon'&&_drawPoints.length>=2){
+    _drawTempLine=L.polygon(_drawPoints,{color:drawColor,weight:2,fillOpacity:.08,dashArray:'5,5'}).addTo(MAP);
+  } else if(_drawPoints.length>=2){
+    _drawTempLine=L.polyline(_drawPoints,{color:drawColor,weight:drawMode==='measure'?3:2,dashArray:drawMode==='measure'?null:'5,5'}).addTo(MAP);
+  }
+  _drawVertexMarkers=_drawPoints.map((p,i)=>L.circleMarker(p,{radius:i===0?5:3.5,color:'#fff',weight:1,fillColor:drawColor,fillOpacity:1,interactive:false}).addTo(MAP));
+  if(drawMode==='measure')_drawUpdateMeasureTooltip();
+}
+function _drawUpdateMeasureTooltip(){
+  if(!_drawPoints.length)return;
+  const last=_drawPoints[_drawPoints.length-1];
+  const total=_drawTotalDistance(_drawPoints);
+  if(_measureTooltip)MAP.removeLayer(_measureTooltip);
+  _measureTooltip=L.marker(last,{icon:L.divIcon({className:'',html:`<div style="background:#111;color:#fff;font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;">${_fmtDist(total)}</div>`,iconSize:null}),interactive:false}).addTo(MAP);
+}
+function _drawAddVertex(latlng){
+  _drawPoints.push(latlng);
+  _drawRedrawTempPath();
+}
+function _drawFinishPath(){
+  if(_drawPoints.length<2){_cancelDrawInProgress();return;}
+  const layer=_ensureDrawnLayer();
+  if(drawMode==='polygon'){
+    if(_drawPoints.length<3){_cancelDrawInProgress();return;}
+    const poly=L.polygon(_drawPoints,{color:drawColor,weight:2,fillOpacity:.12}).addTo(layer);
+    let areaTxt='';
+    if(typeof turf!=='undefined'){
+      try{
+        const coords=_drawPoints.map(p=>[p.lng,p.lat]);
+        coords.push(coords[0]);
+        const area=turf.area(turf.polygon([coords]));
+        areaTxt='Área: '+(area>=10000?(area/10000).toFixed(2)+' ha':area.toFixed(0)+' m²');
+      }catch(e){}
+    }
+    poly.bindPopup(`<div style="font-size:12px;">Polígono dibujado${areaTxt?'<br>'+areaTxt:''}</div>`);
+  } else if(drawMode==='measure'){
+    const total=_drawTotalDistance(_drawPoints);
+    const line=L.polyline(_drawPoints,{color:drawColor,weight:3}).addTo(layer);
+    line.bindPopup(`<div style="font-size:12px;"><b>Distancia medida</b><br>${_fmtDist(total)}</div>`).openPopup();
+    if(_measureTooltip){
+      _measureTooltip.setIcon(L.divIcon({className:'',html:`<div style="background:#111;color:#fff;font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;">${_fmtDist(total)}</div>`,iconSize:null}));
+      _measureTooltip.addTo(layer);
+      _measureTooltip=null;
+    }
+  } else {
+    const total=_drawTotalDistance(_drawPoints);
+    const line=L.polyline(_drawPoints,{color:drawColor,weight:2.5}).addTo(layer);
+    line.bindPopup(`<div style="font-size:12px;">Línea dibujada<br>Longitud: ${_fmtDist(total)}</div>`);
+  }
+  _cancelDrawInProgress(false);
+}
+function _cancelDrawInProgress(clearMeasureTooltip){
+  _drawPoints=[];
+  if(_drawTempLine){MAP.removeLayer(_drawTempLine);_drawTempLine=null;}
+  _drawVertexMarkers.forEach(m=>MAP.removeLayer(m));_drawVertexMarkers=[];
+  if(clearMeasureTooltip!==false&&_measureTooltip){MAP.removeLayer(_measureTooltip);_measureTooltip=null;}
+}
+function clearDrawings(){
+  if(drawnItemsLayer)drawnItemsLayer.clearLayers();
+  _cancelDrawInProgress();
+}
+function _setupDrawTools(){
+  const mapEl=document.getElementById('map');
+  MAP.on('click',e=>{
+    if(drawMode==='point')_drawAddPoint(e.latlng);
+    else if(drawMode==='text')_drawAddText(e.latlng);
+    else if(drawMode==='entity')_drawAddEntity(e.latlng);
+    else if(drawMode==='line'||drawMode==='polygon'||drawMode==='measure')_drawAddVertex(e.latlng);
+    else if(addEntityActive){
+      if(INFRA_CONFIG[addEntityKey].type==='line')_addLineVertex(e.latlng);
+      else _addNewPointEntity(e.latlng);
+    }
+  });
+  MAP.on('dblclick',e=>{
+    if(drawMode==='line'||drawMode==='polygon'||drawMode==='measure'){
+      L.DomEvent.stopPropagation(e);
+      _drawFinishPath();
+    } else if(addEntityActive&&INFRA_CONFIG[addEntityKey].type==='line'){
+      L.DomEvent.stopPropagation(e);
+      _finishAddLine();
+    }
+  });
+  document.addEventListener('keydown',e=>{
+    if(drawMode){
+      if(e.key==='Enter'&&(drawMode==='line'||drawMode==='polygon'||drawMode==='measure'))_drawFinishPath();
+      else if(e.key==='Backspace'&&_drawPoints.length){_drawPoints.pop();_drawRedrawTempPath();}
+      else if(e.key==='Escape'){setDrawMode(null);}
+    }
+    if(addEntityActive&&INFRA_CONFIG[addEntityKey].type==='line'){
+      if(e.key==='Enter')_finishAddLine();
+      else if(e.key==='Backspace'&&_addLineDrawPoints.length){
+        _addLineDrawPoints.pop();
+        if(_addLineTempLayer)MAP.removeLayer(_addLineTempLayer);
+        _addLineTempLayer=_addLineDrawPoints.length?L.polyline(_addLineDrawPoints,{color:'#ffd60a',weight:4,dashArray:'5,5'}).addTo(MAP):null;
+      }
+      else if(e.key==='Escape')_cancelAddEntity();
+    }
+  });
+  mapEl.addEventListener('mousedown',e=>{
+    if(drawMode==='rect'&&e.button===0){
+      MAP.dragging.disable();
+      _drawRectStart=MAP.mouseEventToLatLng(e);
+      e.preventDefault();
+    } else if(drawMode==='circle'&&e.button===0){
+      MAP.dragging.disable();
+      _drawCircleCenter=MAP.mouseEventToLatLng(e);
+      e.preventDefault();
+    }
+  });
+  mapEl.addEventListener('mousemove',e=>{
+    if(drawMode==='rect'&&_drawRectStart){
+      const cur=MAP.mouseEventToLatLng(e);
+      if(_drawTempLine)MAP.removeLayer(_drawTempLine);
+      _drawTempLine=L.rectangle(L.latLngBounds(_drawRectStart,cur),{color:drawColor,weight:2,fillOpacity:.1,dashArray:'4,4'}).addTo(MAP);
+    } else if(drawMode==='circle'&&_drawCircleCenter){
+      const cur=MAP.mouseEventToLatLng(e);
+      const rad=_drawCircleCenter.distanceTo(cur);
+      if(_drawTempLine)MAP.removeLayer(_drawTempLine);
+      _drawTempLine=L.circle(_drawCircleCenter,{radius:rad,color:drawColor,weight:2,fillOpacity:.08,dashArray:'4,4'}).addTo(MAP);
+    } else if(_editDraggingIdx>=0&&_editTarget){
+      const ll=MAP.mouseEventToLatLng(e);
+      _editTarget.handles[_editDraggingIdx].setLatLng(ll);
+      _editTarget.workingCoords[_editDraggingIdx]=ll;
+      _updateEditPreview();
+    }
+  });
+  mapEl.addEventListener('mouseup',e=>{
+    if(drawMode==='rect'&&_drawRectStart){
+      MAP.dragging.enable();
+      const cur=MAP.mouseEventToLatLng(e);
+      if(_drawTempLine){MAP.removeLayer(_drawTempLine);_drawTempLine=null;}
+      const bounds=L.latLngBounds(_drawRectStart,cur);
+      if(bounds.getNorthEast().distanceTo(bounds.getSouthWest())>3){
+        const rect=L.rectangle(bounds,{color:drawColor,weight:2,fillOpacity:.12}).addTo(_ensureDrawnLayer());
+        const wm=L.latLng(bounds.getSouth(),bounds.getWest()).distanceTo(L.latLng(bounds.getSouth(),bounds.getEast()));
+        const hm=L.latLng(bounds.getSouth(),bounds.getWest()).distanceTo(L.latLng(bounds.getNorth(),bounds.getWest()));
+        rect.bindPopup(`<div style="font-size:12px;">Rectángulo<br>${wm.toFixed(1)} × ${hm.toFixed(1)} m</div>`);
+      }
+      _drawRectStart=null;
+    } else if(drawMode==='circle'&&_drawCircleCenter){
+      MAP.dragging.enable();
+      const cur=MAP.mouseEventToLatLng(e);
+      const rad=_drawCircleCenter.distanceTo(cur);
+      if(_drawTempLine){MAP.removeLayer(_drawTempLine);_drawTempLine=null;}
+      if(rad>2){
+        const circ=L.circle(_drawCircleCenter,{radius:rad,color:drawColor,weight:2,fillOpacity:.12}).addTo(_ensureDrawnLayer());
+        circ.bindPopup(`<div style="font-size:12px;">Círculo<br>Radio: ${rad.toFixed(1)} m</div>`);
+      }
+      _drawCircleCenter=null;
+    } else if(_editDraggingIdx>=0){
+      _editDraggingIdx=-1;
+      MAP.dragging.enable();
+    }
+  });
+}
+
+
+// ─── EDITOR DE RED: corregir posición y agregar entidades nuevas ───────────
+// A diferencia de la herramienta anterior (que solo exportaba una lista de correcciones a
+// Excel), esto modifica directamente los datos en memoria de cada capa y permite descargar
+// una copia actualizada del ARCHIVO COMPLETO con los cambios ya embebidos — quedan guardados
+// de forma permanente, no solo durante la sesión.
+let moveModeActive=false;
+let addEntityActive=false, addEntityKey=null;
+let _editTarget=null,_editDraggingIdx=-1;
+let _addLineDrawPoints=[],_addLineTempLayer=null;
+window._dirtyLayers=window._dirtyLayers||new Set();
+window._newEntitySeq=window._newEntitySeq||0;
+
+function _deactivateEditTools(){
+  if(moveModeActive){moveModeActive=false;const b=document.getElementById('edit-move-btn');if(b)b.classList.remove('active');_cancelEditTarget();}
+  if(addEntityActive)_cancelAddEntity();
+}
+// Reconstruye la capa Leaflet de una key a partir de su _gj actual (usado tras corregir/agregar)
+function _rerenderInfraLayer(key){
+  const cfg=INFRA_CONFIG[key];
+  const gj=cfg._gj;
+  if(!gj)return;
+  const wasOnMap=cfg.layer&&MAP.hasLayer(cfg.layer);
+  if(cfg.layer)MAP.removeLayer(cfg.layer);
+  if(cfg.type==='line'){
+    cfg.layer=L.geoJSON(gj,{
+      renderer:_infraRenderer(),
+      style:f=>({color:_infraLineColor(key,f.properties),weight:Math.min(1+((f.properties.DIAMETRO||100)/150),5),opacity:.75}),
+      onEachFeature:(f,l)=>{l.bindPopup(()=>_buildInfraPopup(f.properties,cfg.label),{maxWidth:270});_bindInfraEntityClick(key,l);}
+    });
+  } else {
+    const isCamara=key==='camaras_as';
+    cfg.layer=L.geoJSON(gj,{
+      pointToLayer:(f,latlng)=>L.circleMarker(latlng,isCamara
+        ?{radius:cfg.radius+1,color:cfg.color,weight:2,fillColor:'#ffffff',fillOpacity:0,renderer:_infraRenderer()}
+        :{radius:cfg.radius,color:'#fff',weight:1,fillColor:cfg.color,fillOpacity:.9,renderer:_infraRenderer()}),
+      onEachFeature:(f,l)=>{l.bindPopup(()=>_buildInfraPopup(f.properties,cfg.label),{maxWidth:270});_bindInfraEntityClick(key,l);}
+    });
+  }
+  if(wasOnMap)cfg.layer.addTo(MAP);
+}
+function _markDirty(key){
+  window._dirtyLayers.add(key);
+  updateEditSaveButton();
+}
+function updateEditSaveButton(){
+  const btn=document.getElementById('edit-save-btn');
+  if(!btn)return;
+  const n=window._dirtyLayers.size;
+  btn.disabled=n===0;
+  btn.textContent='💾 Guardar cambios en el archivo ('+n+')';
+}
+
+// ─── Corregir posición (arrastrar) ─────────────────────────────────────────
+function toggleMoveMode(){
+  if(moveModeActive){
+    _cancelEditTarget();
+    moveModeActive=false;
+  } else {
+    setDrawMode(null);
+    lassoActive=false;document.getElementById('lasso-btn').classList.remove('active');
+    infraRectActive=false;document.getElementById('infra-rect-btn').classList.remove('active');
+    infraPolyActive=false;_cancelInfraPolygon();document.getElementById('infra-poly-btn').classList.remove('active');
+    infraPointSelectActive=false;document.getElementById('infra-point-btn').classList.remove('on-select');
+    if(addEntityActive)_cancelAddEntity();
+    if(olorSearchActive){olorSearchActive=false;const osb=document.getElementById('olor-search-btn');if(osb)osb.classList.remove('active');_clearOlorHighlight();}
+    moveModeActive=true;
+    document.getElementById('edit-status').textContent='Clic en un tramo/elemento de una capa activa: aparecen puntos rojos arrastrables.';
+  }
+  document.getElementById('edit-move-btn').classList.toggle('active',moveModeActive);
+  document.getElementById('map').style.cursor=moveModeActive?'crosshair':'';
+}
+function _makeEditHandle(latlng,idx){
+  const h=L.circleMarker(latlng,{radius:7,color:'#fff',weight:2,fillColor:'#ff2d55',fillOpacity:1}).addTo(MAP);
+  h.on('mousedown',e=>{_editDraggingIdx=idx;MAP.dragging.disable();L.DomEvent.stopPropagation(e);});
+  return h;
+}
+function _startEditTarget(key,layerObj){
+  if(_editTarget)_cancelEditTarget();
+  if(!INFRA_CONFIG[key]._gj){alert('Esta capa todavía no está completamente cargada.');return;}
+  const props=layerObj.feature?layerObj.feature.properties:null;
+  if(!props)return;
+  const id=_infraFeatureId(key,props);
+  const isLine=typeof layerObj.getLatLngs==='function';
+  const pts=isLine?_infraGeometryPoints(layerObj):[layerObj.getLatLng()];
+  if(!pts.length)return;
+  const workingCoords=pts.map(p=>L.latLng(p.lat,p.lng));
+  _editTarget={key,id,layerObj,isLine,props,workingCoords,handles:workingCoords.map((ll,i)=>_makeEditHandle(ll,i))};
+  document.getElementById('edit-toolbar').classList.add('show');
+  document.getElementById('edit-toolbar-label').textContent=INFRA_CONFIG[key].label+' '+id+' — arrastrá los puntos rojos';
+}
+function _updateEditPreview(){
+  if(!_editTarget)return;
+  if(_editTarget.isLine)_editTarget.layerObj.setLatLngs(_editTarget.workingCoords);
+  else _editTarget.layerObj.setLatLng(_editTarget.workingCoords[0]);
+}
+function _clearEditHandles(){
+  if(_editTarget)_editTarget.handles.forEach(h=>MAP.removeLayer(h));
+  document.getElementById('edit-toolbar').classList.remove('show');
+}
+function _saveEditTarget(){
+  if(!_editTarget){document.getElementById('edit-toolbar').classList.remove('show');return;}
+  const t=_editTarget;
+  const gj=INFRA_CONFIG[t.key]._gj;
+  const feat=gj.features.find(f=>_infraFeatureId(t.key,f.properties)===t.id);
+  if(feat){
+    if(t.isLine)feat.geometry.coordinates=[t.workingCoords.map(ll=>[ll.lng,ll.lat])];
+    else feat.geometry.coordinates=[t.workingCoords[0].lng,t.workingCoords[0].lat];
+  }
+  _markDirty(t.key);
+  _clearEditHandles();
+  _editTarget=null;
+}
+function _cancelEditTarget(){
+  if(_editTarget)_rerenderInfraLayer(_editTarget.key); // vuelve a dibujar desde el _gj sin cambios
+  _clearEditHandles();
+  _editTarget=null;
+}
+
+// ─── Agregar entidad nueva (válvula/grifo/cámara/tramo) ────────────────────
+async function toggleAddEntityMode(){
+  if(addEntityActive){
+    _cancelAddEntity();
+    return;
+  }
+  setDrawMode(null);
+  lassoActive=false;document.getElementById('lasso-btn').classList.remove('active');
+  infraRectActive=false;document.getElementById('infra-rect-btn').classList.remove('active');
+  infraPolyActive=false;_cancelInfraPolygon();document.getElementById('infra-poly-btn').classList.remove('active');
+  infraPointSelectActive=false;document.getElementById('infra-point-btn').classList.remove('on-select');
+  if(moveModeActive){moveModeActive=false;document.getElementById('edit-move-btn').classList.remove('active');_cancelEditTarget();}
+  if(olorSearchActive){olorSearchActive=false;const osb=document.getElementById('olor-search-btn');if(osb)osb.classList.remove('active');_clearOlorHighlight();}
+  addEntityKey=document.getElementById('edit-entity-type').value;
+  const statusEl=document.getElementById('edit-status');
+  statusEl.textContent='Cargando capa…';
+  await _ensureInfraLoaded(addEntityKey);
+  _autoEnableInfra(addEntityKey);
+  addEntityActive=true;
+  document.getElementById('edit-add-btn').classList.add('active');
+  const isLine=INFRA_CONFIG[addEntityKey].type==='line';
+  statusEl.textContent=isLine
+    ?'Clic para agregar vértices del tramo nuevo · doble clic o Enter para terminar · Backspace deshace.'
+    :'Clic en el mapa para colocar el/la '+INFRA_CONFIG[addEntityKey].label+' nuevo/a.';
+  document.getElementById('map').style.cursor='crosshair';
+}
+function _cancelAddEntity(){
+  addEntityActive=false;
+  addEntityKey=null;
+  _addLineDrawPoints=[];
+  if(_addLineTempLayer){MAP.removeLayer(_addLineTempLayer);_addLineTempLayer=null;}
+  const btn=document.getElementById('edit-add-btn');if(btn)btn.classList.remove('active');
+  const statusEl=document.getElementById('edit-status');if(statusEl)statusEl.textContent='';
+  document.getElementById('map').style.cursor='';
+}
+function _addNewPointEntity(latlng){
+  const cfg=INFRA_CONFIG[addEntityKey];
+  const material=prompt('Material (opcional, "Cancelar" para no agregar):','PVC');
+  if(material===null)return;
+  const diametroStr=prompt('Diámetro en mm (opcional):','110');
+  if(diametroStr===null)return;
+  const diametro=parseFloat(diametroStr)||null;
+  window._newEntitySeq++;
+  const newId='NUEVO-'+window._newEntitySeq;
+  const props={IDENTIFICADORELEMENTO:newId,MATERIAL:material||null,DIAMETRO:diametro,DESCRIPCION:'AGREGADA MANUALMENTE',ESTADO:1};
+  const feature={type:'Feature',properties:props,geometry:{type:'Point',coordinates:[latlng.lng,latlng.lat]}};
+  INFRA_CONFIG[addEntityKey]._gj.features.push(feature);
+  _markDirty(addEntityKey);
+  _rerenderInfraLayer(addEntityKey);
+  _cancelAddEntity();
+}
+function _addLineVertex(latlng){
+  _addLineDrawPoints.push(latlng);
+  if(_addLineTempLayer)MAP.removeLayer(_addLineTempLayer);
+  _addLineTempLayer=L.polyline(_addLineDrawPoints,{color:'#ffd60a',weight:4,dashArray:'5,5'}).addTo(MAP);
+}
+function _finishAddLine(){
+  if(_addLineDrawPoints.length<2){_cancelAddEntity();return;}
+  const material=prompt('Material (opcional, "Cancelar" para no agregar):','PVC');
+  if(material===null){_cancelAddEntity();return;}
+  const diametroStr=prompt('Diámetro en mm (opcional):','110');
+  if(diametroStr===null){_cancelAddEntity();return;}
+  const diametro=parseFloat(diametroStr)||null;
+  let longitud=0;
+  for(let i=1;i<_addLineDrawPoints.length;i++)longitud+=_addLineDrawPoints[i-1].distanceTo(_addLineDrawPoints[i]);
+  window._newEntitySeq++;
+  const newId='NUEVO-'+window._newEntitySeq;
+  const props={IDENTIFICADORTRAMO:newId,MATERIAL:material||null,DIAMETRO:diametro,LONGITUD_M:Math.round(longitud*100)/100,DESCRIPCION:'TRAMO AGREGADO MANUALMENTE'};
+  const coords=_addLineDrawPoints.map(p=>[p.lng,p.lat]);
+  const feature={type:'Feature',properties:props,geometry:{type:'MultiLineString',coordinates:[coords]}};
+  INFRA_CONFIG[addEntityKey]._gj.features.push(feature);
+  _markDirty(addEntityKey);
+  _rerenderInfraLayer(addEntityKey);
+  if(_addLineTempLayer){MAP.removeLayer(_addLineTempLayer);_addLineTempLayer=null;}
+  _addLineDrawPoints=[];
+  _cancelAddEntity();
+}
+
+// ─── Guardar cambios: descarga una copia del archivo con los datos actualizados ────
+async function guardarCambiosEnArchivo(){
+  if(!window._dirtyLayers.size){alert('No hay cambios para guardar. Corregí una posición o agregá una entidad primero.');return;}
+  showSpinner('Generando archivo actualizado...');
+  await new Promise(r=>setTimeout(r,50));
+  try{
+    let html=document.documentElement.outerHTML;
+    if(!/^<!doctype/i.test(html))html='<!DOCTYPE html>\n'+html;
+    for(const key of window._dirtyLayers){
+      const gj=INFRA_CONFIG[key]._gj;
+      if(!gj)continue;
+      const raw=JSON.stringify(gj);
+      const bytes=new TextEncoder().encode(raw);
+      const cs=new CompressionStream('gzip');
+      const writer=cs.writable.getWriter();
+      writer.write(bytes);writer.close();
+      const reader=cs.readable.getReader();
+      const chunks=[];let done=false;
+      while(!done){const x=await reader.read();if(x.done)done=true;else chunks.push(x.value);}
+      const all=new Uint8Array(chunks.reduce((a,c)=>a+c.length,0));
+      let off=0;for(const c of chunks){all.set(c,off);off+=c.length;}
+      let bin='';for(let i=0;i<all.length;i++)bin+=String.fromCharCode(all[i]);
+      const b64=btoa(bin);
+      const re=new RegExp(key+':"[^"]*"');
+      if(re.test(html))html=html.replace(re,key+':"'+b64+'"');
+      else console.error('No se encontró el bloque de datos embebidos para la capa '+key);
+    }
+    const blob=new Blob([html],{type:'text/html'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download='panel_bd_actualizado.html';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    const n=window._dirtyLayers.size;
+    window._dirtyLayers.clear();
+    updateEditSaveButton();
+    alert('Listo — se descargó "panel_bd_actualizado.html" con '+n+' capa(s) actualizada(s), correcciones y entidades nuevas ya incluidas en los datos embebidos.\n\nUsá ese archivo de ahora en adelante (reemplazá el que tenías).');
+  }catch(e){
+    console.error('Error guardando cambios en el archivo',e);
+    alert('Ocurrió un error generando el archivo actualizado. Revisá la consola del navegador.');
+  }finally{
+    hideSpinner();
+  }
+}
+
+// ─── CAPA DE VIALIDAD (red vial clasificada, vía OpenStreetMap/Overpass) ───
+// Aproximación por clasificación OSM (motorway/trunk/primary/secondary/tertiary), NO es la
+// jurisdicción legal oficial de Vialidad (MOP) — útil como referencia visual rápida.
+// Restringida SIEMPRE al área de cobertura de clientes del CO Talagante (con un margen chico),
+// para no traer calles de sectores donde no tenemos red.
+const VIALIDAD_COLORS={motorway:'#7f1d1d',trunk:'#b3282d',primary:'#e8590c',secondary:'#d4a72c',tertiary:'#57606a'};
+const VIALIDAD_LABELS={motorway:'Autopista',trunk:'Troncal',primary:'Primaria',secondary:'Secundaria',tertiary:'Terciaria / Colectora'};
+const VIALIDAD_MIN_ZOOM=12;
+let _talaganteServiceBoundsCache=null;
+async function _getTalaganteServiceBounds(){
+  if(_talaganteServiceBoundsCache)return _talaganteServiceBoundsCache;
+  await loadClientesTalagante();
+  if(!CLIENTES_TALAGANTE_MAP||!CLIENTES_TALAGANTE_MAP.size)return null;
+  let minLat=Infinity,maxLat=-Infinity,minLon=Infinity,maxLon=-Infinity;
+  CLIENTES_TALAGANTE_MAP.forEach(info=>{
+    minLat=Math.min(minLat,info.lat);maxLat=Math.max(maxLat,info.lat);
+    minLon=Math.min(minLon,info.lon);maxLon=Math.max(maxLon,info.lon);
+  });
+  _talaganteServiceBoundsCache=L.latLngBounds([minLat,minLon],[maxLat,maxLon]).pad(0.08);
+  return _talaganteServiceBoundsCache;
+}
+async function _fetchVialidadOSM(){
+  const serviceBounds=await _getTalaganteServiceBounds();
+  if(!serviceBounds)throw new Error('SIN_DATOS_TALAGANTE');
+  const viewBounds=MAP.getBounds();
+  if(!serviceBounds.intersects(viewBounds))throw new Error('SIN_COBERTURA');
+  const south=Math.max(viewBounds.getSouth(),serviceBounds.getSouth());
+  const west=Math.max(viewBounds.getWest(),serviceBounds.getWest());
+  const north=Math.min(viewBounds.getNorth(),serviceBounds.getNorth());
+  const east=Math.min(viewBounds.getEast(),serviceBounds.getEast());
+  // Se pide y cachea por celdas fijas (no por el rectángulo exacto de la vista), así paneos
+  // repetidos dentro de una misma celda no vuelven a pedirle nada a Overpass — y una vez que
+  // una celda se cacheó en el navegador (IndexedDB) queda disponible offline, como si la capa
+  // estuviera embebida en el archivo.
+  const gx0=Math.floor(west/VIALIDAD_CELL_DEG),gx1=Math.floor(east/VIALIDAD_CELL_DEG);
+  const gy0=Math.floor(south/VIALIDAD_CELL_DEG),gy1=Math.floor(north/VIALIDAD_CELL_DEG);
+  const elements=[];
+  const seenIds=new Set();
+  for(let gx=gx0;gx<=gx1;gx++){
+    for(let gy=gy0;gy<=gy1;gy++){
+      const data=await _fetchVialidadCell(gx,gy);
+      (data.elements||[]).forEach(el=>{
+        if(!seenIds.has(el.id)){seenIds.add(el.id);elements.push(el);}
+      });
+    }
+  }
+  return{elements};
+}
+const VIALIDAD_CELL_DEG=0.03; // celdas de ~3 km, cacheadas una por una
+function _vialidadCellCacheKey(gx,gy){return'VIALIDAD_CELL_'+gx+'_'+gy+'_v1';}
+async function _fetchVialidadCell(gx,gy){
+  const cacheKey=_vialidadCellCacheKey(gx,gy);
+  const cached=await idbGet(cacheKey);
+  if(cached)return cached;
+  const south=gy*VIALIDAD_CELL_DEG,north=south+VIALIDAD_CELL_DEG;
+  const west=gx*VIALIDAD_CELL_DEG,east=west+VIALIDAD_CELL_DEG;
+  const bbox=`${south},${west},${north},${east}`;
+  const query=`[out:json][timeout:25];(way["highway"~"^(motorway|trunk|primary|secondary|tertiary)$"](${bbox}););out geom;`;
+  const url='https://overpass-api.de/api/interpreter?data='+encodeURIComponent(query);
+  const res=await fetch(url);
+  if(!res.ok)throw new Error('HTTP '+res.status);
+  const data=await res.json();
+  await idbSet(cacheKey,data);
+  return data;
+}
+function _buildVialidadLayer(osmData){
+  const group=L.layerGroup();
+  const renderer=_infraRenderer();
+  (osmData.elements||[]).forEach(el=>{
+    if(el.type!=='way'||!el.geometry||el.geometry.length<2)return;
+    const latlngs=el.geometry.map(g=>[g.lat,g.lon]);
+    const hw=(el.tags&&el.tags.highway)||'tertiary';
+    const color=VIALIDAD_COLORS[hw]||'#57606a';
+    const weight=hw==='motorway'?5:hw==='trunk'?4.5:hw==='primary'?4:hw==='secondary'?3:2.2;
+    const pl=L.polyline(latlngs,{color,weight,opacity:.85,renderer});
+    const nombre=(el.tags&&(el.tags.name||el.tags.ref))||'(sin nombre)';
+    const clasif=VIALIDAD_LABELS[hw]||hw;
+    pl.bindPopup(`<div style="font-size:12px;max-width:220px;"><b>${nombre}</b><br>Clasificación (OSM): ${clasif}</div>`,{maxWidth:240});
+    pl.feature={type:'Feature',properties:{IDENTIFICADORELEMENTO:el.id,NOMBRE:nombre,CLASIFICACION:clasif},geometry:{type:'LineString',coordinates:latlngs.map(([la,lo])=>[lo,la])}};
+    _bindInfraEntityClick('vialidad',pl);
+    pl.addTo(group);
+  });
+  return group;
+}
+function _handleVialidadError(e,statusEl){
+  console.error('Error cargando/recargando vialidad',e);
+  if(e&&e.message==='SIN_COBERTURA'){
+    if(statusEl)statusEl.textContent='fuera de cobertura';
+    alert('Esta zona del mapa está fuera del área con clientes del CO Talagante — Vialidad solo se carga dentro de esa cobertura. Navegá hacia el sector de servicio y volvé a intentar.');
+  } else if(e&&e.message==='SIN_DATOS_TALAGANTE'){
+    if(statusEl)statusEl.textContent='⚠ sin datos';
+    alert('No se pudo determinar el área de cobertura de Talagante (no hay clientes cargados).');
+  } else {
+    if(statusEl)statusEl.textContent='⚠ error';
+  }
+}
+async function recargarVialidad(){
+  const cb=document.getElementById('infra-cb-vialidad');
+  if(!cb||!cb.checked){return;}
+  if(MAP.getZoom()<VIALIDAD_MIN_ZOOM){alert('Acercate más en el mapa (zoom ≥ '+VIALIDAD_MIN_ZOOM+') antes de recargar Vialidad, para no traer una consulta demasiado grande.');return;}
+  const statusEl=document.getElementById('infra-status-vialidad');
+  if(statusEl)statusEl.textContent='recargando…';
+  try{
+    // Fuerza a pedir de nuevo (ignora caché) solo las celdas visibles ahora mismo.
+    const serviceBounds=await _getTalaganteServiceBounds();
+    if(serviceBounds){
+      const vb=MAP.getBounds();
+      const south=Math.max(vb.getSouth(),serviceBounds.getSouth()),west=Math.max(vb.getWest(),serviceBounds.getWest());
+      const north=Math.min(vb.getNorth(),serviceBounds.getNorth()),east=Math.min(vb.getEast(),serviceBounds.getEast());
+      const gx0=Math.floor(west/VIALIDAD_CELL_DEG),gx1=Math.floor(east/VIALIDAD_CELL_DEG);
+      const gy0=Math.floor(south/VIALIDAD_CELL_DEG),gy1=Math.floor(north/VIALIDAD_CELL_DEG);
+      for(let gx=gx0;gx<=gx1;gx++)for(let gy=gy0;gy<=gy1;gy++)await idbDelete(_vialidadCellCacheKey(gx,gy));
+    }
+    const osmData=await _fetchVialidadOSM();
+    const cfg=INFRA_CONFIG.vialidad;
+    if(cfg.layer)MAP.removeLayer(cfg.layer);
+    cfg.layer=_buildVialidadLayer(osmData);
+    cfg.layer.addTo(MAP);
+    if(statusEl)statusEl.textContent=(osmData.elements||[]).length.toLocaleString();
+  }catch(e){
+    _handleVialidadError(e,statusEl);
+  }
+}
+
+
 function agruparInfraSeleccion(){
   if(!infraSelected.size){alert('Seleccioná elementos de infraestructura primero (con el selector rectangular o de polígono).');return;}
   const name=prompt('Nombre del grupo:','Grupo '+(INFRA_GROUPS.size+1));
@@ -2662,12 +3461,13 @@ function _convexHull(points){ // points: [ [x,y], ... ]
 // tope, devuelve null (las válvulas elegidas no cierran el sector).
 function _isolatedTramosByValves(graph,seedTramoIds,barrierNodeKeys,cap){
   const visited=new Set(seedTramoIds);
+  const borderNodeKeys=new Set(); // nodos de válvula donde el recorrido efectivamente se detuvo
   let frontierNodes=new Set();
   seedTramoIds.forEach(id=>{
     const f=graph.tramoById.get(id);
     if(f){
-      if(!barrierNodeKeys.has(f._k0))frontierNodes.add(f._k0);
-      if(!barrierNodeKeys.has(f._k1))frontierNodes.add(f._k1);
+      if(barrierNodeKeys.has(f._k0))borderNodeKeys.add(f._k0);else frontierNodes.add(f._k0);
+      if(barrierNodeKeys.has(f._k1))borderNodeKeys.add(f._k1);else frontierNodes.add(f._k1);
     }
   });
   while(frontierNodes.size){
@@ -2677,140 +3477,333 @@ function _isolatedTramosByValves(graph,seedTramoIds,barrierNodeKeys,cap){
       (graph.edges.get(nodeKey)||[]).forEach(e=>{
         if(!visited.has(e.tramoId)){
           visited.add(e.tramoId);
-          if(!barrierNodeKeys.has(e.otherKey))next.add(e.otherKey);
+          if(barrierNodeKeys.has(e.otherKey))borderNodeKeys.add(e.otherKey);
+          else next.add(e.otherKey);
         }
       });
     });
     frontierNodes=next;
   }
-  return visited;
+  return{visited,borderNodeKeys};
 }
-async function generarPoligonoCorte(){
-  const selValvulas=[...infraSelected.values()].filter(item=>item.key==='valvulas_ap');
+// ─── Índice espacial rápido para "snapear" válvulas/grifos al nodo de red más cercano ──
+function _buildNodeGridIndex(graph,cellDeg){
+  const grid=new Map();
+  graph.edges.forEach((_,nodeKey)=>{
+    const[lat,lon]=nodeKey.split(',').map(Number);
+    const gkey=Math.floor(lon/cellDeg)+','+Math.floor(lat/cellDeg);
+    if(!grid.has(gkey))grid.set(gkey,[]);
+    grid.get(gkey).push(nodeKey);
+  });
+  return{grid,cellDeg};
+}
+function _nearestNodeKeyIndexed(index,lat,lon,maxDistM){
+  const gx=Math.floor(lon/index.cellDeg),gy=Math.floor(lat/index.cellDeg);
+  let bestKey=null,bestDist=Infinity;
+  for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
+    const cell=index.grid.get((gx+dx)+','+(gy+dy));
+    if(!cell)continue;
+    cell.forEach(nodeKey=>{
+      const[nlat,nlon]=nodeKey.split(',').map(Number);
+      const d=_pointToSegmentMeters(lat,lon,nlat,nlon,nlat,nlon);
+      if(d<bestDist){bestDist=d;bestKey=nodeKey;}
+    });
+  }
+  return bestDist<=maxDistM?bestKey:null;
+}
+// ─── Recorrido automático de la red AP desde lo seleccionado ───────────────
+// Regla: TODAS las válvulas de la red (no solo las que tildaste) actúan como límite del
+// recorrido — el trazado se corta ahí. La EXCEPCIÓN es la propia válvula desde la que
+// arrancás (si clickeaste una): desde ahí se recorre hacia ambos lados hasta la SIGUIENTE
+// válvula en cada dirección. Un tramo clickeado recorre en todas direcciones hasta las
+// válvulas más cercanas. Un grifo clickeado arranca desde el tramo más próximo, igual que un tramo.
+async function _autoTraceNetwork(selValvulas,selRedAP,selGrifos){
+  const apGj=await _getInfraGeoJSON('red_ap');
+  const graph=_buildAPGraphUndirected(apGj);
+  const gridIndex=_buildNodeGridIndex(graph,0.001); // celdas de ~100m
+
+  await _ensureInfraLoaded('valvulas_ap');
+  const valvGj=INFRA_CONFIG.valvulas_ap._gj;
+
+  const clickedValveNodeKeys=new Set();
+  selValvulas.forEach(item=>{
+    const ll=item.layerObj.getLatLng();
+    const nk=_nearestNodeKeyIndexed(gridIndex,ll.lat,ll.lng,25);
+    if(nk)clickedValveNodeKeys.add(nk);
+  });
+  const barrierNodeKeys=new Set();
+  const nodeKeyToValve=new Map(); // nodo de red -> feature de válvula real (para identificar cuáles hay que maniobrar)
+  if(valvGj){
+    valvGj.features.forEach(vf=>{
+      const[lon,lat]=vf.geometry.coordinates;
+      const nk=_nearestNodeKeyIndexed(gridIndex,lat,lon,25);
+      if(nk&&!clickedValveNodeKeys.has(nk)){
+        barrierNodeKeys.add(nk);
+        nodeKeyToValve.set(nk,vf);
+      }
+    });
+  }
+  // Válvulas virtuales creadas con "Crear entidad": actúan siempre como límite del recorrido,
+  // dentro o fuera de la red, aunque no existan en la base de datos.
+  let customValveCount=0;
+  const customValveByNode=new Map();
+  if(drawnItemsLayer){
+    drawnItemsLayer.eachLayer(l=>{
+      if(l.isCustomValve){
+        const ll=l.getLatLng();
+        const nk=_nearestNodeKeyIndexed(gridIndex,ll.lat,ll.lng,25);
+        if(nk){barrierNodeKeys.add(nk);customValveByNode.set(nk,l);customValveCount++;}
+      }
+    });
+  }
+
+  const seedIdSet=new Set(selRedAP.map(i=>i.id));
+  selValvulas.forEach(item=>{
+    const ll=item.layerObj.getLatLng();
+    const nk=_nearestNodeKeyIndexed(gridIndex,ll.lat,ll.lng,25);
+    if(nk){(graph.edges.get(nk)||[]).forEach(e=>seedIdSet.add(e.tramoId));}
+  });
+  selGrifos.forEach(item=>{
+    const ll=item.layerObj.getLatLng();
+    const near=_nearestTramo(apGj,ll.lat,ll.lng,60);
+    if(near)seedIdSet.add(near.feature.properties.IDENTIFICADORTRAMO??near.feature.properties.OBJECTID);
+  });
+  if(!seedIdSet.size)return{items:[],tramoCount:0,customValveCount,maniobrarValvulas:[]};
+
+  const result=_isolatedTramosByValves(graph,[...seedIdSet],barrierNodeKeys,900);
+  if(result===null)return{items:null,capped:true};
+  const{visited:isolatedIds,borderNodeKeys}=result;
+
+  // Válvulas a maniobrar: SOLO las que el recorrido efectivamente tocó como límite (bordes
+  // reales del corte). La válvula que se haya clickeado como punto de partida NO se incluye —
+  // es la que se va a reparar/cambiar, no una que se pueda cerrar (puede estar en falla).
+  // Las "VALVULA GRIFO" tampoco cuentan — son ramales de hidrante, no válvulas de maniobra real.
+  const maniobrarValvulas=[];
+  const maniobrarIds=new Set();
+  borderNodeKeys.forEach(nk=>{
+    const vf=nodeKeyToValve.get(nk);
+    if(!vf)return;
+    if((vf.properties.DESCRIPCION||'')==='VALVULA GRIFO')return;
+    // Solo cuenta si este nodo separa de verdad el sector aislado del resto de la red: al
+    // menos uno de los tramos que tocan este punto tiene que quedar AFUERA de lo aislado.
+    // Si todos los tramos conectados ya quedaron adentro (por otro camino), la válvula es
+    // interior/redundante — no hace falta maniobrarla para lograr el corte.
+    const tocaAlgoDeAfuera=(graph.edges.get(nk)||[]).some(e=>!isolatedIds.has(e.tramoId));
+    if(!tocaAlgoDeAfuera)return;
+    if(!maniobrarIds.has(vf.properties.IDENTIFICADORELEMENTO)){
+      maniobrarIds.add(vf.properties.IDENTIFICADORELEMENTO);
+      maniobrarValvulas.push(vf);
+    }
+  });
+
+  const items=[...isolatedIds].map(tid=>{
+    const f=graph.tramoById.get(tid);
+    return{key:'red_ap',id:tid,props:f.properties,cfg:INFRA_CONFIG.red_ap,_geom:f.geometry};
+  });
+  items.push(...selValvulas,...selGrifos);
+  return{items,tramoCount:isolatedIds.size,customValveCount,maniobrarValvulas};
+}
+function _highlightCorteTraceItems(items,maniobrarValvulas){
+  const ids=new Set(items.filter(i=>i.key==='red_ap').map(i=>i.id));
+  if(INFRA_CONFIG.red_ap.layer){
+    INFRA_CONFIG.red_ap.layer.eachLayer(l=>{
+      const p=l.feature.properties;
+      const tid=p.IDENTIFICADORTRAMO??p.OBJECTID;
+      if(ids.has(tid)){l.setStyle({color:'#d1242f',weight:5,opacity:1});l.bringToFront();}
+    });
+  }
+  if(maniobrarValvulas&&maniobrarValvulas.length)_highlightManiobrarValvulas(maniobrarValvulas);
+}
+// Resalta en el mapa (con un color propio) las válvulas que hay que maniobrar para el corte —
+// las de borde del sector aislado + la que se haya clickeado como punto de partida. No toca las
+// válvulas que quedan adentro del polígono pero que no son necesarias para aislar el sector.
+function _highlightManiobrarValvulas(valvulas){
+  if(!valvulas||!valvulas.length)return;
+  const ids=new Set(valvulas.map(v=>v.properties.IDENTIFICADORELEMENTO));
+  _autoEnableInfra('valvulas_ap');
+  const cfg=INFRA_CONFIG.valvulas_ap;
+  if(!cfg.layer)return;
+  cfg.layer.eachLayer(l=>{
+    const p=l.feature.properties;
+    if(ids.has(p.IDENTIFICADORELEMENTO)){
+      l.setStyle({radius:(cfg.radius||6)+2,fillColor:'#ff6d00',color:'#000',weight:2,fillOpacity:1});
+      l.bringToFront();
+    }
+  });
+}
+// ─── Dibuja el polígono de corte (buffer/corredor real) a partir de una lista de elementos ──
+async function _drawCortePolygonFromItems(finalItems,silent,maniobrarValvulas){
+  const CORTE_BUFFER_M=25;
+  let corteGeoJSON=null;
+  if(typeof turf!=='undefined'){
+    try{
+      const allCoords=[];
+      finalItems.forEach(item=>{
+        let coords=null;
+        if(item.layerObj){
+          const pts2=_infraGeometryPoints(item.layerObj);
+          if(pts2.length>=2)coords=pts2.map(p=>[p.lng,p.lat]);
+        } else if(item._geom&&item._geom.coordinates){
+          const line=item._geom.coordinates[0];
+          if(line&&line.length>=2)coords=line;
+        }
+        if(coords)allCoords.push(coords);
+      });
+      if(allCoords.length){
+        const multi=turf.multiLineString(allCoords);
+        corteGeoJSON=turf.buffer(multi,CORTE_BUFFER_M,{units:'meters',steps:5});
+      }
+    }catch(e){console.error('Error generando corredor con Turf, uso envolvente simple',e);}
+  }
+  let latlngs=null;
+  if(!corteGeoJSON){
+    const pts=[];
+    finalItems.forEach(item=>{
+      if(item.layerObj){_infraGeometryPoints(item.layerObj).forEach(ll=>pts.push([ll.lng,ll.lat]));}
+      else if(item._geom){(item._geom.coordinates||[]).forEach(line=>line.forEach(([lon,lat])=>pts.push([lon,lat])));}
+    });
+    if(pts.length<3){if(!silent)alert('No hay suficientes puntos geométricos para trazar el polígono.');return false;}
+    const hull=_convexHull(pts);
+    const centroid=hull.reduce((a,p)=>[a[0]+p[0]/hull.length,a[1]+p[1]/hull.length],[0,0]);
+    const bufferDeg=0.00015;
+    const buffered=hull.map(p=>{
+      const dx=p[0]-centroid[0],dy=p[1]-centroid[1];
+      const len=Math.sqrt(dx*dx+dy*dy)||1;
+      return[p[0]+dx/len*bufferDeg,p[1]+dy/len*bufferDeg];
+    });
+    latlngs=buffered.map(p=>[p[1],p[0]]);
+  }
+  if(window._cortePolygon)MAP.removeLayer(window._cortePolygon);
+  if(corteGeoJSON){
+    window._cortePolygon=L.geoJSON(corteGeoJSON,{style:{color:'#d1242f',weight:3,fillColor:'#d1242f',fillOpacity:.08}}).addTo(MAP);
+  } else {
+    window._cortePolygon=L.polygon(latlngs,{color:'#d1242f',weight:3,fillColor:'#d1242f',fillOpacity:.08}).addTo(MAP);
+  }
+  await loadClientesTalagante();
+  const clientList=[];
+  CLIENTES_TALAGANTE_MAP.forEach((info,cuenta)=>{
+    let inside=false;
+    if(corteGeoJSON&&typeof turf!=='undefined'){
+      try{ inside=turf.booleanPointInPolygon(turf.point([info.lon,info.lat]),corteGeoJSON); }catch(e){}
+    } else if(latlngs){
+      inside=_pointInPolygon(info.lat,info.lon,latlngs);
+    }
+    if(inside)clientList.push({cuenta,direccion:info.direccion});
+  });
+  window._cortePolygonData={items:finalItems,corteGeoJSON,latlngs,clientCount:clientList.length,clientList,maniobrarValvulas:maniobrarValvulas||[]};
+  window._cortePolygonActive=true;
+  window._cortePolygon.bindPopup(_buildCortePolygonPopup(finalItems,clientList,maniobrarValvulas||[]),{maxWidth:300});
+  if(!silent)MAP.fitBounds(window._cortePolygon.getBounds(),{padding:[40,40]});
+  return true;
+}
+// ─── Botones "Marcar recorrido" / "Dibujar polígono" ───────────────────────
+// Antes eran un solo botón con doble clic; ahora son dos acciones separadas y explícitas.
+// Si ya hay un polígono activo, cualquier cambio de selección lo actualiza solo (adaptativo,
+// vía _maybeAutoUpdateCortePolygon -> generarPoligonoCorte(true)).
+async function generarPoligonoCorte(silent){
+  if(!silent)return; // el modo no-silencioso ahora se hace con los 2 botones separados
+  const selValvulas=[...infraSelected.values()].filter(item=>item.key==='valvulas_ap'||item.key==='valvulas_grifo');
   const selRedAP=[...infraSelected.values()].filter(item=>item.key==='red_ap');
   const selGrifos=[...infraSelected.values()].filter(item=>item.key==='grifos');
-  if(selRedAP.length<1&&(selValvulas.length+selGrifos.length)<2){
-    alert('Seleccioná al menos 1 tramo de Red AP (para trazar por válvulas), o 2+ válvulas/grifos, para generar el polígono de corte.');
+  if(!selValvulas.length&&!selRedAP.length&&!selGrifos.length){eliminarPoligonosCreados();return;}
+  // Modo adaptativo: ya hay un polígono activo, así que recorre y redibuja directo.
+  try{
+    const traced=await _autoTraceNetwork(selValvulas,selRedAP,selGrifos);
+    if(!traced||!traced.items||!traced.items.length)return;
+    _highlightCorteTraceItems(traced.items,traced.maniobrarValvulas);
+    await _drawCortePolygonFromItems(traced.items,true,traced.maniobrarValvulas);
+  }catch(e){console.error('Error actualizando polígono de corte',e);}
+}
+// Botón 1: recorre la red automáticamente desde lo seleccionado (tramo/válvula/grifo) hasta
+// las válvulas más cercanas en cada dirección, y solo MARCA los tramos en rojo (no dibuja nada).
+async function marcarRecorridoCorte(){
+  const selValvulas=[...infraSelected.values()].filter(item=>item.key==='valvulas_ap'||item.key==='valvulas_grifo');
+  const selRedAP=[...infraSelected.values()].filter(item=>item.key==='red_ap');
+  const selGrifos=[...infraSelected.values()].filter(item=>item.key==='grifos');
+  if(!selValvulas.length&&!selRedAP.length&&!selGrifos.length){
+    alert('Seleccioná al menos un tramo de Red AP, una válvula o un grifo (clic sobre el elemento en el mapa) para trazar el sector.');
+    return;
+  }
+  showSpinner('Recorriendo la red hasta las válvulas...');
+  await new Promise(r=>setTimeout(r,50));
+  try{
+    const traced=await _autoTraceNetwork(selValvulas,selRedAP,selGrifos);
+    hideSpinner();
+    if(traced&&traced.items===null){
+      alert('El recorrido no encuentra válvulas que lo acoten (la red se extiende demasiado). Elegí un tramo/válvula más próximo a un sector con válvulas cercanas.');
+      return;
+    }
+    if(!traced||!traced.items.length){
+      alert('No se pudo recorrer la red desde lo seleccionado (¿está muy lejos de la Red AP?).');
+      return;
+    }
+    window._corteTraceItems=traced.items;
+    window._corteTraceManiobrarValvulas=traced.maniobrarValvulas;
+    window._corteTraceReady=true;
+    _highlightCorteTraceItems(traced.items,traced.maniobrarValvulas);
+    const cvTxt=traced.customValveCount?(' (incluye '+traced.customValveCount+' válvula(s) virtual(es))'):'';
+    const mvTxt=' · '+traced.maniobrarValvulas.length+' válvula(s) a maniobrar';
+    alert('Se marcaron '+traced.tramoCount+' tramo(s) hasta las válvulas más cercanas'+cvTxt+mvTxt+'.\n\nAhora podés tocar "Dibujar polígono" — o seguir seleccionando más tramos/válvulas/grifos para ampliar el sector antes de dibujar.');
+  }catch(e){
+    console.error('Error recorriendo la red',e);
+    hideSpinner();
+    alert('Ocurrió un error recorriendo la red.');
+  }
+}
+// Botón 2: dibuja el polígono a partir de lo marcado con "Marcar recorrido".
+async function dibujarPoligonoCorte(){
+  if(!window._corteTraceReady||!window._corteTraceItems){
+    alert('Primero tocá "Marcar recorrido" y seleccioná un tramo/válvula/grifo.');
     return;
   }
   showSpinner('Calculando sector de corte...');
+  await new Promise(r=>setTimeout(r,50));
   try{
-    let finalItems,usedValveTrace=false,isolatedCount=0;
-    if(selValvulas.length>=2&&selRedAP.length>=1){
-      const gj=await _getInfraGeoJSON('red_ap');
-      const graph=_buildAPGraphUndirected(gj);
-      const barrierNodeKeys=new Set();
-      selValvulas.forEach(item=>{
-        const ll=item.layerObj.getLatLng();
-        let bestKey=null,bestDist=Infinity;
-        graph.edges.forEach((_,nodeKey)=>{
-          const[lat,lon]=nodeKey.split(',').map(Number);
-          const d=_pointToSegmentMeters(ll.lat,ll.lng,lat,lon,lat,lon);
-          if(d<bestDist){bestDist=d;bestKey=nodeKey;}
-        });
-        if(bestKey&&bestDist<=25)barrierNodeKeys.add(bestKey);
-      });
-      const seedIds=selRedAP.map(i=>i.id);
-      const isolatedIds=_isolatedTramosByValves(graph,seedIds,barrierNodeKeys,900);
-      if(isolatedIds===null){
-        hideSpinner();
-        alert('Las válvulas seleccionadas no logran cerrar un sector acotado (la red se sigue extendiendo). Agregá válvulas que rodeen mejor la zona, o quitá las válvulas de la selección para generar el polígono simple con los elementos elegidos.');
-        return;
-      }
-      isolatedCount=isolatedIds.size;
-      finalItems=[...isolatedIds].map(tid=>{
-        const f=graph.tramoById.get(tid);
-        return{key:'red_ap',id:tid,props:f.properties,cfg:INFRA_CONFIG.red_ap,_geom:f.geometry};
-      });
-      finalItems.push(...selValvulas,...selGrifos);
-      usedValveTrace=true;
-      if(INFRA_CONFIG.red_ap.layer){
-        INFRA_CONFIG.red_ap.layer.eachLayer(l=>{
-          const p=l.feature.properties;
-          const tid2=p.IDENTIFICADORTRAMO??p.OBJECTID;
-          if(isolatedIds.has(tid2)){l.setStyle({color:'#d1242f',weight:5,opacity:1});l.bringToFront();}
-        });
-      }
-    } else {
-      finalItems=[...selRedAP,...selValvulas,...selGrifos];
-    }
-    // ── Polígono "corredor": buffer real alrededor del trazado de cada tramo + unión,
-    // para que el contorno siga las calles (como en un plano real) en vez de una simple
-    // envolvente. Si Turf.js no cargó (sin conexión), cae de respaldo al hull convexo.
-    const CORTE_BUFFER_M=25;
-    let corteGeoJSON=null;
-    if(typeof turf!=='undefined'){
-      try{
-        const lineFeats=[];
-        finalItems.forEach(item=>{
-          let coords=null;
-          if(item.layerObj){
-            const pts2=_infraGeometryPoints(item.layerObj);
-            if(pts2.length>=2)coords=pts2.map(p=>[p.lng,p.lat]);
-          } else if(item._geom&&item._geom.coordinates){
-            const line=item._geom.coordinates[0];
-            if(line&&line.length>=2)coords=line;
-          }
-          if(coords)lineFeats.push(turf.lineString(coords));
-        });
-        if(lineFeats.length){
-          let merged=null;
-          lineFeats.forEach(lf=>{
-            const buf=turf.buffer(lf,CORTE_BUFFER_M,{units:'meters'});
-            if(!buf)return;
-            merged=merged?turf.union(merged,buf):buf;
-          });
-          if(merged)corteGeoJSON=merged;
-        }
-      }catch(e){console.error('Error generando corredor con Turf, uso envolvente simple',e);}
-    }
-    let latlngs=null;
-    if(!corteGeoJSON){
-      // Respaldo: envolvente convexa simple (menos precisa, no sigue las calles)
-      const pts=[];
-      finalItems.forEach(item=>{
-        if(item.layerObj){_infraGeometryPoints(item.layerObj).forEach(ll=>pts.push([ll.lng,ll.lat]));}
-        else if(item._geom){(item._geom.coordinates||[]).forEach(line=>line.forEach(([lon,lat])=>pts.push([lon,lat])));}
-      });
-      if(pts.length<3){hideSpinner();alert('No hay suficientes puntos geométricos para trazar el polígono.');return;}
-      const hull=_convexHull(pts);
-      const centroid=hull.reduce((a,p)=>[a[0]+p[0]/hull.length,a[1]+p[1]/hull.length],[0,0]);
-      const bufferDeg=0.00015;
-      const buffered=hull.map(p=>{
-        const dx=p[0]-centroid[0],dy=p[1]-centroid[1];
-        const len=Math.sqrt(dx*dx+dy*dy)||1;
-        return[p[0]+dx/len*bufferDeg,p[1]+dy/len*bufferDeg];
-      });
-      latlngs=buffered.map(p=>[p[1],p[0]]);
-    }
-    if(window._cortePolygon)MAP.removeLayer(window._cortePolygon);
-    if(corteGeoJSON){
-      window._cortePolygon=L.geoJSON(corteGeoJSON,{style:{color:'#d1242f',weight:3,fillColor:'#d1242f',fillOpacity:.08}}).addTo(MAP);
-    } else {
-      window._cortePolygon=L.polygon(latlngs,{color:'#d1242f',weight:3,fillColor:'#d1242f',fillOpacity:.08}).addTo(MAP);
-    }
-    await loadCoordMap();
-    let clientCount=0;
-    if(corteGeoJSON&&typeof turf!=='undefined'){
-      COORD_MAP.forEach(ll=>{
-        try{ if(turf.booleanPointInPolygon(turf.point([ll[1],ll[0]]),corteGeoJSON))clientCount++; }catch(e){}
-      });
-    } else {
-      COORD_MAP.forEach(ll=>{if(_pointInPolygon(ll[0],ll[1],latlngs))clientCount++;});
-    }
-    window._cortePolygonData={items:finalItems,corteGeoJSON,latlngs,clientCount,usedValveTrace};
-    MAP.fitBounds(window._cortePolygon.getBounds(),{padding:[40,40]});
+    const ok=await _drawCortePolygonFromItems(window._corteTraceItems,false,window._corteTraceManiobrarValvulas);
     hideSpinner();
-    const msg=usedValveTrace
-      ?`Sector de corte trazado a partir de las válvulas seleccionadas: ${isolatedCount} tramos aislados, ${clientCount} clientes dentro del polígono. ¿Exportar a PDF ahora?`
-      :`Polígono de corte generado. ${clientCount} clientes dentro del polígono. ¿Exportar a PDF ahora?`;
-    if(confirm(msg))exportCortePolygonPDF();
+    window._corteTraceReady=false;
+    if(ok&&window._cortePolygonData){
+      if(confirm('Polígono generado. '+window._cortePolygonData.clientCount+' clientes dentro del sector, '+window._cortePolygonData.maniobrarValvulas.length+' válvula(s) a maniobrar. ¿Exportar a PDF ahora?'))exportCortePolygonPDF();
+    }
   }catch(e){
-    console.error('Error generando polígono de corte',e);
-    alert('Ocurrió un error calculando el sector de corte.');
-  }finally{
+    console.error('Error dibujando polígono de corte',e);
     hideSpinner();
+    alert('Ocurrió un error generando el polígono.');
   }
+}
+function _buildCortePolygonPopup(items,clientList,maniobrarValvulas){
+  maniobrarValvulas=maniobrarValvulas||[];
+  const total=clientList.length;
+  const shown=clientList.slice(0,300);
+  let rows=shown.map(c=>`<div style="padding:2px 0;border-bottom:1px solid #eee;display:flex;justify-content:space-between;gap:8px;">
+      <span style="font-family:'JetBrains Mono',monospace;color:var(--accent);white-space:nowrap;">${c.cuenta}</span>
+      <span style="text-align:right;">${c.direccion||'—'}</span>
+    </div>`).join('');
+  if(total>shown.length)rows+=`<div style="padding:4px 0;color:#888;">…y ${total-shown.length} clientes más (exportá el PDF para el detalle completo)</div>`;
+  let valvRows=maniobrarValvulas.map(v=>{
+    const p=v.properties;
+    const tipo=(p.DESCRIPCION||'').replace('VALVULA ','')||'—';
+    return `<div style="padding:2px 0;border-bottom:1px solid #eee;display:flex;justify-content:space-between;gap:8px;">
+      <span style="font-family:'JetBrains Mono',monospace;color:#ff6d00;white-space:nowrap;">${p.IDENTIFICADORELEMENTO}</span>
+      <span style="text-align:right;">${tipo}${p.DIAMETRO?' · Ø'+p.DIAMETRO+'mm':''}</span>
+    </div>`;
+  }).join('');
+  return `<div style="font-size:12px;">
+    <div style="font-weight:700;margin-bottom:4px;">Sector de corte AP</div>
+    <div style="margin-bottom:6px;color:#555;">Elementos: ${items.length} &middot; Clientes afectados: ${total} &middot; <span style="color:#ff6d00;font-weight:700;">Válvulas a maniobrar: ${maniobrarValvulas.length}</span></div>
+    <div style="font-weight:700;font-size:10.5px;margin-bottom:2px;color:#ff6d00;">🔶 Válvulas a maniobrar</div>
+    <div style="max-height:110px;overflow-y:auto;font-size:10.5px;margin-bottom:6px;">${valvRows||'<div style="color:#888;">Ninguna detectada</div>'}</div>
+    <div style="font-weight:700;font-size:10.5px;margin-bottom:2px;">Clientes afectados</div>
+    <div style="max-height:150px;overflow-y:auto;font-size:10.5px;">${rows||'<div style="color:#888;">Sin clientes dentro del polígono</div>'}</div>
+  </div>`;
+}
+// El polígono "se adapta" mientras seguís seleccionando/deseleccionando tramos y válvulas,
+// una vez que ya existe (después del 2do clic), sin tener que apretar el botón de nuevo.
+let _corteAutoUpdateTimer=null;
+function _maybeAutoUpdateCortePolygon(){
+  if(!window._cortePolygonActive)return;
+  clearTimeout(_corteAutoUpdateTimer);
+  _corteAutoUpdateTimer=setTimeout(()=>{generarPoligonoCorte(true);},500);
 }
 async function exportCortePolygonPDF(){
   if(!window._cortePolygonData){alert('Primero generá un polígono de corte.');return;}
@@ -2847,7 +3840,19 @@ async function exportCortePolygonPDF(){
 // ─── TAREAS RELACIONADAS POR RECORRIDO DE RED (AS por flujo / AP por red) ──
 // Palabras clave: ajustalas si tu nomenclatura de "Tarea"/"Estado" difiere.
 const AS_MAIN_KEYWORDS=['REBALSE','REBOSE','DESBORDE','ANEGAMIENTO'];
-const AS_SEC_KEYWORDS=['OBSTRUCCION','OBSTRUCCIÓN','ATORO','TAPADO','RAICES','RAÍCES','DESOBSTRUCCION','DESOBSTRUCCIÓN','ATOCHAMIENTO'];
+// Lista real de tareas que indican posible obstrucción en la red AS (confirmada por el usuario,
+// reemplaza la lista adivinada anterior). Se usa tanto en "Relacionadas" como en "Buscar olor".
+const AS_SEC_KEYWORDS=[
+  'DESOBSTRUIR COLECTOR SL RAT','REHACER EN GARANTIA AS','LIMPIEZA DE COLECTOR SL RAT',
+  'LIMPIEZA DE COLECTOR E. ACUSTICO','DESOBSTRUIR COLECTOR E. ACUSTICO',
+  'REMOCION DE TACO SOLIDO CON ROTAVARILLA E. ACUSTICO','LIMPIEZA CAMION COMPACTO',
+  'INSPECCION PREVENTIVA RED AS E.ACUSTICO','REPARACION DETECTADA POR PLAN DE LIMPIEZA DE COLECTOR DOM',
+  'REPARACION DE UD REDES','DESOB. COLECTOR C/VARILLA','REHACER EN GARANTIA REDES',
+  'REMOCION DE TACO SOLIDO CON ROTAVARILLA','LAVADO DE COLECTOR','RENOVAR COLECTOR',
+  'REPARACION DE COLECTOR','DESOBSTRUIR COLECTOR','DESOBSTRUIR UD','LAVADO DE COLECTOR X MPE'
+];
+// Alias para el módulo de búsqueda de olores (misma lista, otro nombre para dejar claro su uso)
+const AS_OBSTRUCTION_KEYWORDS=AS_SEC_KEYWORDS;
 const AP_MAIN_KEYWORDS=['ROTURA','FUGA','FILTRACION','FILTRACIÓN','QUIEBRE'];
 const AP_SEC_KEYWORDS=['SIN AGUA','BAJA PRESION','BAJA PRESIÓN','FALTA DE AGUA','DISCONTINUIDAD'];
 const REL_MAX_HOPS=6, REL_MAX_DIST_M=40, REL_NEAREST_TRAMO_M=80;
@@ -2956,6 +3961,187 @@ function _nearbyTramosUndirected(graph,startTramoId,maxHops){
   }
   visited.delete(startTramoId);
   return visited;
+}
+// ─── BÚSQUEDA DE OLORES: corredor aguas arriba desde un punto de reclamo ───
+// A diferencia de "Relacionadas" (que necesita una tarea de rebase ya cargada como ancla),
+// esta herramienta arranca de un clic directo sobre un tramo o cámara de Red AS — porque en
+// este fenómeno el punto de reclamo casi nunca tiene problema de flujo, así que no hay ninguna
+// tarea "ancla" con la que empezar. El gas viaja aguas arriba de la obstrucción real y sale por
+// el camino más abierto (tapas mal selladas, sifones secos, "oídos"/confluencias), a veces 8-10
+// tramos más allá de donde realmente está el problema.
+let olorSearchActive=false;
+const ODOR_MAX_HOPS=10;
+function toggleOlorSearch(){
+  olorSearchActive=!olorSearchActive;
+  if(olorSearchActive){
+    setDrawMode(null);
+    lassoActive=false;document.getElementById('lasso-btn').classList.remove('active');
+    infraRectActive=false;document.getElementById('infra-rect-btn').classList.remove('active');
+    infraPolyActive=false;_cancelInfraPolygon();document.getElementById('infra-poly-btn').classList.remove('active');
+    infraPointSelectActive=false;document.getElementById('infra-point-btn').classList.remove('on-select');
+    _deactivateEditTools();
+    alert('Modo "Buscar origen de olor" activo.\n\nHacé clic en el tramo o la cámara de Red AS donde llegó el reclamo de olor. Se va a recorrer hasta '+ODOR_MAX_HOPS+' tramos aguas arriba buscando posibles obstrucciones y puntos de confluencia ("oídos").');
+  }
+  const btn=document.getElementById('olor-search-btn');
+  if(btn)btn.classList.toggle('active',olorSearchActive);
+  document.getElementById('map').style.cursor=olorSearchActive?'crosshair':'';
+}
+function _clearOlorHighlight(){
+  const cfg=INFRA_CONFIG.red_as;
+  if(cfg.layer){
+    cfg.layer.eachLayer(l=>{
+      const p=l.feature.properties;
+      l.setStyle({color:_infraLineColor('red_as',p),weight:Math.min(1+((p.DIAMETRO||100)/150),5),opacity:.75});
+    });
+  }
+  if(window._olorOidoMarkers){window._olorOidoMarkers.forEach(m=>MAP.removeLayer(m));window._olorOidoMarkers=null;}
+  if(window._olorStartMarker){MAP.removeLayer(window._olorStartMarker);window._olorStartMarker=null;}
+  window._olorSearchData=null;
+  const panel=document.getElementById('olor-results-panel');
+  if(panel){panel.classList.remove('open');panel.style.display='none';}
+}
+async function _buscarOrigenOlor(key,layerObj){
+  showSpinner('Recorriendo la red aguas arriba...');
+  await new Promise(r=>setTimeout(r,50));
+  try{
+    _clearOlorHighlight();
+    const asGj=await _getInfraGeoJSON('red_as');
+    if(!_asGraph)_asGraph=_buildASGraph(asGj);
+    let startTramoId,startLL;
+    if(key==='red_as'){
+      const p=layerObj.feature.properties;
+      startTramoId=p.IDENTIFICADORTRAMO??p.OBJECTID;
+      const pts=_infraGeometryPoints(layerObj);
+      startLL=pts[Math.floor(pts.length/2)];
+    } else {
+      startLL=layerObj.getLatLng();
+      const near=_nearestTramo(asGj,startLL.lat,startLL.lng,60);
+      if(!near){hideSpinner();alert('No se encontró un colector de Red AS cercano a esa cámara (< 60 m).');return;}
+      startTramoId=near.feature.properties.IDENTIFICADORTRAMO??near.feature.properties.OBJECTID;
+    }
+    const upstreamIds=_upstreamTramos(_asGraph,startTramoId,ODOR_MAX_HOPS);
+    upstreamIds.add(startTramoId);
+    const upstreamFeats=[...upstreamIds].map(tid=>_asGraph.tramoById.get(tid)).filter(Boolean);
+    hideSpinner();
+    if(upstreamFeats.length<=1){alert('No se pudo trazar un corredor aguas arriba desde ese punto (¿está al inicio de la red?).');return;}
+
+    // Resaltar el corredor en el mapa
+    _autoEnableInfra('red_as');
+    INFRA_CONFIG.red_as.layer&&INFRA_CONFIG.red_as.layer.eachLayer(l=>{
+      const p=l.feature.properties;
+      const tid=p.IDENTIFICADORTRAMO??p.OBJECTID;
+      if(upstreamIds.has(tid)){l.setStyle({color:'#8250df',weight:5,opacity:1});l.bringToFront();}
+    });
+    window._olorStartMarker=L.circleMarker(startLL,{radius:9,color:'#fff',weight:2,fillColor:'#d1242f',fillOpacity:1}).addTo(MAP)
+      .bindPopup('<div style="font-size:12px;"><b>📍 Punto de reclamo de olor</b></div>');
+
+    // Detectar "oídos": nodos de confluencia (3+ tramos conectados) dentro del corredor
+    const nodeInCorridor=new Set();
+    upstreamFeats.forEach(f=>{nodeInCorridor.add(f._startKey);nodeInCorridor.add(f._endKey);});
+    const oidoNodes=[];
+    nodeInCorridor.forEach(nk=>{
+      const total=(_asGraph.inEdges.get(nk)||[]).length+(_asGraph.outEdges.get(nk)||[]).length;
+      if(total>=3){
+        const[lat,lon]=nk.split(',').map(Number);
+        oidoNodes.push([lat,lon]);
+      }
+    });
+    window._olorOidoMarkers=oidoNodes.map(([lat,lon])=>
+      L.circleMarker([lat,lon],{radius:8,color:'#000',weight:2,fillColor:'#ffd60a',fillOpacity:1}).addTo(MAP)
+        .bindPopup('<div style="font-size:12px;"><b>👂 Oído (confluencia)</b><br>Punto de unión de varios tramos — sospechoso prioritario.</div>')
+    );
+
+    // Cruce con tareas cargadas dentro del corredor (palabras clave reales de obstrucción)
+    const candidatos=[];
+    const tramosConTarea=new Set();
+    DATA.forEach(t=>{
+      if(!t.lat)return;
+      if(!_taskMatches(t,AS_OBSTRUCTION_KEYWORDS))return;
+      for(const f of upstreamFeats){
+        const lines=f.geometry.coordinates;
+        let hit=false,hitLat=null,hitLon=null;
+        lines.forEach(line=>{
+          for(let i=0;i<line.length-1;i++){
+            const[lon1,lat1]=line[i],[lon2,lat2]=line[i+1];
+            if(_pointToSegmentMeters(t.lat,t.lon,lat1,lon1,lat2,lon2)<=40){hit=true;hitLat=lat1;hitLon=lon1;break;}
+          }
+        });
+        if(hit){
+          const tid=f.properties.IDENTIFICADORTRAMO??f.properties.OBJECTID;
+          tramosConTarea.add(tid);
+          const tieneFlujo=DATA.some(t2=>t2._id!==t._id&&t2.lat&&_taskMatches(t2,AS_MAIN_KEYWORDS)&&_pointToSegmentMeters(t2.lat,t2.lon,t.lat,t.lon,t.lat,t.lon)<=30);
+          candidatos.push({tarea:t,tramoId:tid,tieneFlujo});
+          return;
+        }
+      }
+    });
+    candidatos.sort((a,b)=>(a.tieneFlujo?1:0)-(b.tieneFlujo?1:0)); // sin problema de flujo primero (más sospechosos)
+
+    window._olorSearchData={upstreamFeats,oidoCount:oidoNodes.length,candidatos,tramosSinTarea:upstreamFeats.length-tramosConTarea.size};
+    _renderOlorResultsPanel();
+    const bounds=upstreamFeats.reduce((acc,f)=>{
+      const b=L.geoJSON(f.geometry).getBounds();
+      return acc?acc.extend(b):b;
+    },null);
+    if(bounds)MAP.fitBounds(bounds,{padding:[40,40]});
+  }catch(e){
+    console.error('Error buscando origen de olor',e);
+    hideSpinner();
+    alert('Ocurrió un error recorriendo la red.');
+  }
+}
+function _renderOlorResultsPanel(){
+  const d=window._olorSearchData;
+  if(!d)return;
+  let panel=document.getElementById('olor-results-panel');
+  if(!panel){
+    panel=document.createElement('div');
+    panel.id='olor-results-panel';
+    panel.className='fix-toolbar'; // reutiliza el estilo de barra flotante
+    panel.style.cssText='position:absolute;bottom:60px;left:50%;transform:translateX(-50%);z-index:950;background:rgba(255,255,255,.98);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:11px;box-shadow:var(--shadow);max-width:340px;max-height:280px;overflow-y:auto;';
+    document.querySelector('.map-wrap').appendChild(panel);
+  }
+  panel.classList.add('open');
+  panel.style.display='block';
+  const sinFlujo=d.candidatos.filter(c=>!c.tieneFlujo);
+  const conFlujo=d.candidatos.filter(c=>c.tieneFlujo);
+  let html=`<div style="font-weight:700;margin-bottom:4px;">👃 Corredor de olor · ${d.upstreamFeats.length} tramos aguas arriba</div>
+    <div style="color:#555;margin-bottom:6px;">👂 ${d.oidoCount} oído(s) (confluencias) &middot; ${d.tramosSinTarea} tramo(s) sin tarea registrada</div>`;
+  if(sinFlujo.length){
+    html+=`<div style="font-weight:700;color:#cf222e;margin-top:4px;">🔴 Sospechosos prioritarios (SIN problema de flujo, ${sinFlujo.length})</div>`;
+    html+=sinFlujo.map(c=>`<div style="padding:2px 0;border-bottom:1px solid #eee;">${c.tarea._displayId||c.tarea._id} — ${c.tarea['Tarea']||''} <span style="color:#888;">(tramo ${c.tramoId})</span></div>`).join('');
+  }
+  if(conFlujo.length){
+    html+=`<div style="font-weight:700;color:#9a6700;margin-top:6px;">🟡 Con problema de flujo también (${conFlujo.length}, revisar si es otro caso)</div>`;
+    html+=conFlujo.map(c=>`<div style="padding:2px 0;border-bottom:1px solid #eee;">${c.tarea._displayId||c.tarea._id} — ${c.tarea['Tarea']||''} <span style="color:#888;">(tramo ${c.tramoId})</span></div>`).join('');
+  }
+  if(!d.candidatos.length){
+    html+=`<div style="color:#888;margin-top:4px;">Ninguna tarea de obstrucción registrada en el corredor — es sector a inspeccionar en terreno, priorizando los oídos (marcados en amarillo).</div>`;
+  }
+  html+=`<div style="display:flex;gap:6px;margin-top:8px;">
+    <button class="btn-sm btn-excel" onclick="exportOlorSearch()">&#8595; Excel</button>
+    <button class="btn-sm" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);" onclick="_clearOlorHighlight();">&#10005; Cerrar</button>
+  </div>`;
+  panel.innerHTML=html;
+}
+function exportOlorSearch(){
+  const d=window._olorSearchData;
+  if(!d){alert('No hay resultados de búsqueda de olor para exportar.');return;}
+  const rows=d.upstreamFeats.map(f=>{
+    const p=f.properties;
+    const tid=p.IDENTIFICADORTRAMO??p.OBJECTID;
+    const cand=d.candidatos.find(c=>c.tramoId===tid);
+    return{
+      ID_Tramo:tid,Material:p.MATERIAL||'',Diametro_mm:p.DIAMETRO||'',Longitud_m:p.LONGITUD_M||'',
+      Tarea_Obstruccion:cand?(cand.tarea['Tarea']||''):'',
+      Estado_Tarea:cand?(cand.tarea['Estado']||''):'',
+      Con_Problema_Flujo_Tambien:cand?(cand.tieneFlujo?'SI':'NO'):'',
+      Sin_Tarea_Registrada:cand?'NO':'SI'
+    };
+  });
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Corredor Olor');
+  XLSX.writeFile(wb,'busqueda_olor_'+new Date().toISOString().substring(0,10)+'.xlsx');
 }
 async function findRelatedTasks(id){
   const r=DATA.find(x=>x._id===id);
