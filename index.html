@@ -1671,15 +1671,26 @@ function applyBDFiltered(loadAll){
   if(!pendingBD){status.textContent='⚠ Carga un archivo primero.';return;}
   const toLoad=loadAll?pendingBD:_lmFiltered();
   if(toLoad.length===0){status.textContent='⚠ Ninguna tarea coincide con los filtros.';pendingBD=null;return;}
+  // Guarda en qué pestaña y con qué filtro estabas trabajando, para no perderlo al recargar.
+  const prevTab=document.querySelector('.tab-page.active')?.id?.replace('page-','')||'home';
+  const prevFilter=activeFilter;
   showSpinner('Procesando '+toLoad.length+' tareas...');
   setTimeout(()=>{
     DATA=toLoad; pendingBD=null;
     pinnedIds=new Set(); selIds=new Set();
+    // "Relacionadas" queda inevitablemente obsoleto (las marcas viven en las filas viejas, que
+    // se descartan) — se limpia explícitamente para que el botón/la barra no queden "vivos"
+    // apuntando a datos que ya no existen. Las filas nuevas ya nacen sin _relMain/_relSecondary,
+    // así que solo hace falta resetear el estado de la UI (sin tocar marcadores/lista todavía).
+    window._relatedGroup=null;
+    const relBar=document.getElementById('related-bar');if(relBar)relBar.remove();
+    const relBtn=document.getElementById('f-related');if(relBtn)relBtn.classList.remove('on-rel');
     computeScores(); buildDataIdx(); buildMarkers();
-    populateSelects(); updateStats(); setFilter('all');
+    populateSelects(); updateStats();
+    setFilter(prevFilter==='related'?'all':prevFilter); // preserva vencidas/dup/etc., no "related" (ya no aplica)
     hideSpinner();
     buildHomeScreen();
-    showTab('home');
+    showTab(prevTab); // se queda en la misma pestaña en la que estabas
     status.textContent='✓ '+DATA.length+' tareas, '+DATA.filter(r=>r.lat).length+' georef., '+DATA.filter(r=>r.is_duplicate).length+' dup.';
     setTimeout(()=>status.textContent='',6000);
   },50);
