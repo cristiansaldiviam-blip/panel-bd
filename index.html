@@ -3839,7 +3839,6 @@ async function exportCortePolygonPDF(){
 
 // ─── TAREAS RELACIONADAS POR RECORRIDO DE RED (AS por flujo / AP por red) ──
 // Palabras clave: ajustalas si tu nomenclatura de "Tarea"/"Estado" difiere.
-const AS_MAIN_KEYWORDS=['REBALSE','REBOSE','DESBORDE','ANEGAMIENTO'];
 // Lista real de tareas que indican posible obstrucción en la red AS (confirmada por el usuario,
 // reemplaza la lista adivinada anterior). Se usa tanto en "Relacionadas" como en "Buscar olor".
 const AS_SEC_KEYWORDS=[
@@ -3853,6 +3852,9 @@ const AS_SEC_KEYWORDS=[
 ];
 // Alias para el módulo de búsqueda de olores (misma lista, otro nombre para dejar claro su uso)
 const AS_OBSTRUCTION_KEYWORDS=AS_SEC_KEYWORDS;
+// En AS no hay una lista separada de "síntoma" (rebase/rebose) — cualquier tarea de la lista de
+// obstrucción puede actuar como punto de anclaje principal en "Relacionadas".
+const AS_MAIN_KEYWORDS=AS_SEC_KEYWORDS;
 const AP_MAIN_KEYWORDS=['ROTURA','FUGA','FILTRACION','FILTRACIÓN','QUIEBRE'];
 const AP_SEC_KEYWORDS=['SIN AGUA','BAJA PRESION','BAJA PRESIÓN','FALTA DE AGUA','DISCONTINUIDAD'];
 const REL_MAX_HOPS=6, REL_MAX_DIST_M=40, REL_NEAREST_TRAMO_M=80;
