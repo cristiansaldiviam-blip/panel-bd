@@ -957,7 +957,7 @@ valvulas_ap:"H4sIADZdkGoC/+y9W68lx3Em+leIftbWZNwj9NYmKZmGJNJNynPGBweCMEczMKBjGTr
 const INFRA_CONFIG={
   red_ap:      {label:'Red AP',      color:'#0969da', type:'line',  loaded:false, layer:null},
   red_as:      {label:'Red AS',      color:'#9a6700', type:'line',  loaded:false, layer:null},
-  camaras_as:  {label:'Cámara AS',   color:'#1a7f37', type:'point', radius:5, loaded:false, layer:null},
+  camaras_as:  {label:'Cámara AS',   color:'#1a7f37', type:'point', radius:7, loaded:false, layer:null},
   grifos:      {label:'Grifo',       color:'#cf222e', type:'point', radius:5.5, loaded:false, layer:null},
   valvulas_ap: {label:'Válvula AP',  color:'#8250df', type:'point', radius:6, loaded:false, layer:null},
   valvulas_grifo: {label:'Válvula de Grifo', color:'#00c5ff', type:'point', radius:5.5, loaded:false, layer:null},
@@ -2493,14 +2493,14 @@ function _infraFeatureId(key,props){
   if(key==='clientes')return props.CUENTA;
   return props.IDENTIFICADORTRAMO??props.IDENTIFICADORELEMENTO??props.OBJECTID;
 }
-function _addInfraSelection(key,layerObj){
+function _addInfraSelection(key,layerObj,clickLatLng){
   const props=layerObj.feature?layerObj.feature.properties:null;
   if(!props)return;
   const id=_infraFeatureId(key,props);
   const skey=key+'_'+id;
   if(infraSelected.has(skey))return;
   const cfg=INFRA_CONFIG[key];
-  infraSelected.set(skey,{key,id,props,layerObj,cfg});
+  infraSelected.set(skey,{key,id,props,layerObj,cfg,clickLatLng});
   if(layerObj.setStyle){
     if(!layerObj._origStyle)layerObj._origStyle={color:layerObj.options.color,weight:layerObj.options.weight,fillColor:layerObj.options.fillColor,radius:layerObj.options.radius,fillOpacity:layerObj.options.fillOpacity};
     if(cfg.type==='line')layerObj.setStyle({color:'#ffd60a',weight:Math.max(layerObj.options.weight,4)});
@@ -2541,7 +2541,7 @@ function _bindInfraEntityClick(key,layerObj){
       return;
     }
     if(infraPointSelectActive){
-      _addInfraSelection(key,layerObj);
+      _addInfraSelection(key,layerObj,e.latlng);
       renderInfraSelPanel();
       return;
     }
@@ -2901,7 +2901,7 @@ async function _drawAddEntity(latlng){
       snapLatLng=L.latLng(nlat,nlon);
       snapped=true;
     } else {
-      const near=_nearestTramo(apGj,latlng.lat,latlng.lng,30);
+      const near=_nearestTramo(apGj,latlng.lat,latlng.lng,Infinity); // sin límite: siempre engancha al tramo más cercano de la red
       if(near){
         const proj=_projectPointOnFeature(latlng,near.feature);
         if(proj){
@@ -2922,10 +2922,10 @@ async function _drawAddEntity(latlng){
   let aviso;
   if(splitTramoId!=null)aviso='<br><span style="color:#1a7f37;">✓ Ubicada sobre el tramo '+splitTramoId+' — lo corta en dos en este punto exacto.</span>';
   else if(snapped)aviso='';
-  else aviso='<br><span style="color:#cf222e;font-weight:600;">⚠ No se encontró un cruce ni un tramo de la Red AP a menos de 30 m — esta válvula NO va a afectar el trazado hasta que la ubiques sobre la red.</span>';
+  else aviso='<br><span style="color:#cf222e;font-weight:600;">⚠ No se pudo enganchar a la Red AP (¿la capa está cargada?) — esta válvula NO va a afectar el trazado hasta que la ubiques sobre la red.</span>';
   mk.bindPopup(`<div style="font-size:12px;"><b>&#128296; Válvula virtual</b><br>${idLabel}<br><span style="color:#666;">Creada manualmente — actúa como límite al generar un polígono de corte.</span>${aviso}<br><button class="row-x-btn" style="margin-top:4px;" onclick="window._removeCustomValve('${idLabel}')">&#10005; Quitar</button></div>`);
   mk.on('click',function(){ if(drawMode!=='entity')mk.openPopup(); });
-  if(!snapped)alert('No se encontró un cruce ni un tramo de la Red AP a menos de 30 m de donde clickeaste.\n\nLa válvula virtual se agregó igual, pero NO va a afectar el recorrido/polígono hasta que la reubiques sobre la red (arrastrala con "📍✏️ Corregir posición", o borrala y volvé a intentar más cerca de una tubería).');
+  if(!snapped)alert('No se pudo enganchar la válvula virtual a la Red AP (verificá que la capa Red AP esté cargada).\n\nLa válvula virtual se agregó igual, pero NO va a afectar el recorrido/polígono hasta que cargues la Red AP o la reubiques sobre la red.');
   if(window._cortePolygonActive)_maybeAutoUpdateCortePolygon();
   else window._corteTraceReady=false;
 }
@@ -3654,8 +3654,21 @@ async function _autoTraceNetwork(selValvulas,selRedAP,selGrifos){
   const seedIdSet=new Set();
   selRedAP.forEach(i=>{
     const pieces=splitOriginalToPieces.get(i.id);
-    if(pieces)pieces.forEach(p=>seedIdSet.add(p));
-    else seedIdSet.add(i.id);
+    if(pieces&&pieces.length>1&&i.clickLatLng){
+      // El tramo que clickeaste quedó partido por una válvula virtual: sembrar SOLO el
+      // pedazo del lado donde clickeaste, si no, el corte "salta" la válvula porque ambos
+      // lados quedarían pre-incluidos como semilla.
+      let bestPiece=null,bestDist=Infinity;
+      pieces.forEach(pid=>{
+        const pf=graph.tramoById.get(pid);
+        if(!pf)return;
+        const proj=_projectPointOnFeature(i.clickLatLng,pf);
+        if(proj&&proj.dist<bestDist){bestDist=proj.dist;bestPiece=pid;}
+      });
+      seedIdSet.add(bestPiece||pieces[0]);
+    } else if(pieces){
+      pieces.forEach(p=>seedIdSet.add(p));
+    } else seedIdSet.add(i.id);
   });
   selValvulas.forEach(item=>{
     const ll=item.layerObj.getLatLng();
