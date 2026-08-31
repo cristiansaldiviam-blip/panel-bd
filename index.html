@@ -2494,10 +2494,10 @@ CENTRO OPERATIVO = TALAGANTE</pre>
           <input class="gh-token-input" type="password" id="gh-token-input" placeholder="🔒 Token GitHub (ghp_...)" oninput="saveGhToken(this.value)" title="Token personal de GitHub con permiso repo">
           <span class="gh-token-saved" id="gh-token-saved" style="display: inline;">✓ Token guardado</span>
         </div>
-        <div class="gh-status " id="embed-status" style="margin-top:4px;">Armando index.html con la BD embebida...</div>
+        <div class="gh-status" id="embed-status" style="margin-top:4px;"></div>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
-        <button class="gh-publish-btn" id="gh-publish-btn" style="background:var(--ok);" onclick="publishToGithub()" disabled="">Publicando...</button>
+        <button class="gh-publish-btn" id="gh-publish-btn" style="background:var(--ok);" onclick="publishToGithub()">☁️ Publicar en GitHub</button>
         <button class="gh-btn secondary" onclick="downloadEmbeddedHtml()">⇩ Descargar HTML (respaldo manual)</button>
       </div>
     </div>
@@ -2511,7 +2511,7 @@ CENTRO OPERATIVO = TALAGANTE</pre>
     </div>
     <div style="display:flex;gap:12px;align-items:center;margin-top:6px;">
       <button class="apply-btn" onclick="applyBD()">✓ Aplicar y actualizar mapa</button>
-      <span id="apply-status" style="font-size:12px;color:var(--text2);">⚠ Carga un archivo primero.</span>
+      <span id="apply-status" style="font-size:12px;color:var(--text2);"></span>
     </div>
   </div>
 </div>
