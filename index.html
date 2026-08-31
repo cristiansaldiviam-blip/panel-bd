@@ -1103,7 +1103,7 @@ async function toggleInfraLayer(key,checkbox){
           if(cfg.type==='line'){
             cfg.layer=L.geoJSON(gj,{
               renderer:_infraRenderer(),
-              style:f=>({color:_infraLineColor(key,f.properties),weight:Math.min(1+((f.properties.DIAMETRO||100)/150),5),opacity:.75}),
+              style:f=>({color:_infraLineColor(key,f.properties),weight:Math.min(2.5+((f.properties.DIAMETRO||100)/150),7),opacity:.75}),
               onEachFeature:(f,l)=>{l.bindPopup(()=>_buildInfraPopup(f.properties,cfg.label),{maxWidth:270});_bindInfraEntityClick(key,l);}
             });
           } else {
@@ -1298,7 +1298,7 @@ async function highlightByIDSV(){
   cfg.layer.eachLayer(l=>{
     const p=l.feature.properties;
     const match=p.IDSV!==undefined&&String(p.IDSV)===val;
-    const baseW=Math.min(1+((p.DIAMETRO||100)/150),5);
+    const baseW=Math.min(2.5+((p.DIAMETRO||100)/150),7);
     if(match){
       matchCount++;
       l.setStyle({color:'#ff2d55',weight:Math.max(baseW,4),opacity:1});
@@ -1344,7 +1344,7 @@ function clearIDSVHighlight(){
   document.getElementById('idsv-export-btn').disabled=true;
   window._idsvPlanData=null;
   if(!cfg.layer)return;
-  cfg.layer.eachLayer(l=>{const p=l.feature.properties;l.setStyle({color:_infraLineColor('red_as',p),weight:Math.min(1+((p.DIAMETRO||100)/150),5),opacity:.75});});
+  cfg.layer.eachLayer(l=>{const p=l.feature.properties;l.setStyle({color:_infraLineColor('red_as',p),weight:Math.min(2.5+((p.DIAMETRO||100)/150),7),opacity:.75});});
 }
 
 // ─── CAPAS SECUNDARIAS: resaltar por Cuartel de Corte (Red AP / Grifos / Válvulas AP) ──
@@ -1367,7 +1367,7 @@ async function highlightByCuartel(){
       const p=l.feature.properties;
       const match=p.CODIGOCUARTELCORTE!==undefined&&String(p.CODIGOCUARTELCORTE)===val;
       if(cfg.type==='line'){
-        const baseW=Math.min(1+((p.DIAMETRO||100)/150),5);
+        const baseW=Math.min(2.5+((p.DIAMETRO||100)/150),7);
         if(match){
           matchCount++;
           l.setStyle({color:'#ff2d55',weight:Math.max(baseW,4),opacity:1});l.bringToFront();
@@ -1433,7 +1433,7 @@ function clearCuartelHighlight(){
     cfg.layer.eachLayer(l=>{
       const p=l.feature.properties;
       if(cfg.type==='line'){
-        l.setStyle({color:_infraLineColor(key,p),weight:Math.min(1+((p.DIAMETRO||100)/150),5),opacity:.75});
+        l.setStyle({color:_infraLineColor(key,p),weight:Math.min(2.5+((p.DIAMETRO||100)/150),7),opacity:.75});
       } else {
         l.setStyle({radius:cfg.radius,fillColor:cfg.color,color:'#fff',weight:1,fillOpacity:.9});
       }
@@ -2803,7 +2803,7 @@ function _clearTramoHighlight(){
   if(!cfg.layer)return;
   cfg.layer.eachLayer(l=>{
     const p=l.feature.properties;
-    l.setStyle({color:_infraLineColor('red_ap',p),weight:Math.min(1+((p.DIAMETRO||100)/150),5),opacity:.75});
+    l.setStyle({color:_infraLineColor('red_ap',p),weight:Math.min(2.5+((p.DIAMETRO||100)/150),7),opacity:.75});
   });
 }
 
@@ -3091,7 +3091,7 @@ function _rerenderInfraLayer(key){
   if(cfg.type==='line'){
     cfg.layer=L.geoJSON(gj,{
       renderer:_infraRenderer(),
-      style:f=>({color:_infraLineColor(key,f.properties),weight:Math.min(1+((f.properties.DIAMETRO||100)/150),5),opacity:.75}),
+      style:f=>({color:_infraLineColor(key,f.properties),weight:Math.min(2.5+((f.properties.DIAMETRO||100)/150),7),opacity:.75}),
       onEachFeature:(f,l)=>{l.bindPopup(()=>_buildInfraPopup(f.properties,cfg.label),{maxWidth:270});_bindInfraEntityClick(key,l);}
     });
   } else {
@@ -4004,7 +4004,7 @@ function _clearOlorHighlight(){
   if(cfg.layer){
     cfg.layer.eachLayer(l=>{
       const p=l.feature.properties;
-      l.setStyle({color:_infraLineColor('red_as',p),weight:Math.min(1+((p.DIAMETRO||100)/150),5),opacity:.75});
+      l.setStyle({color:_infraLineColor('red_as',p),weight:Math.min(2.5+((p.DIAMETRO||100)/150),7),opacity:.75});
     });
   }
   if(window._olorOidoMarkers){window._olorOidoMarkers.forEach(m=>MAP.removeLayer(m));window._olorOidoMarkers=null;}
