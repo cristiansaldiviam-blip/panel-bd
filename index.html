@@ -5115,10 +5115,21 @@ function initGhToken(){
 // Traduce códigos HTTP comunes de la API de GitHub a un motivo entendible.
 function ghErrorHint(status){
   if(status===401) return 'token inválido, vencido o mal pegado';
-  if(status===403) return 'token sin permiso suficiente (necesita scope “repo” completo, o “Contents: Read and write” si es fine-grained) o límite de la API alcanzado';
+  if(status===403) return 'límite de solicitudes de GitHub alcanzado (60/hora sin token, compartido entre todos en tu red — pegá tu token arriba para subir a 5.000/hora) o token sin scope “repo”/“Contents: Read and write”';
   if(status===404) return 'no se encontró el repo/rama/archivo (revisá el nombre del repo, la rama, o que el token tenga acceso)';
   if(status===422) return 'datos inválidos en la solicitud';
   return 'HTTP '+status;
+}
+
+// Headers para llamadas de LECTURA a la API de GitHub: si hay un token
+// guardado lo manda igual (aunque el repo sea público), porque sin token
+// GitHub limita a 60 solicitudes/hora por IP — compartido entre todos en
+// una misma red corporativa se agota rápido. Con token sube a 5.000/hora.
+function _ghReadHeaders(){
+  const h={'Accept':'application/vnd.github.v3+json'};
+  const t=loadGhToken();
+  if(t) h['Authorization']='token '+t;
+  return h;
 }
 
 // fetch con timeout: si la red se cuelga (proxy que bloquea sin devolver
@@ -5153,7 +5164,7 @@ window.addEventListener('pageshow',resetPublishUI);
 // commits, sin el límite de 1MB de la API de "contents"). Función compartida
 // por el botón de la pestaña "Cargar BD" y el botón rojo del mapa.
 async function _fetchBdDataFromGithub(){
-  const headers={'Accept':'application/vnd.github.v3+json'};
+  const headers=_ghReadHeaders();
   const refRes=await fetchTimeout(GH_API_BASE+'/git/ref/heads/'+GH_BRANCH,{headers});
   if(!refRes.ok) throw new Error('No se pudo leer la rama '+GH_BRANCH+' — '+ghErrorHint(refRes.status));
   const refData=await refRes.json();
@@ -5177,7 +5188,7 @@ async function _fetchBdDataFromGithub(){
 
 // Fecha/hora del último commit que tocó bd_data.json (cuándo se publicó).
 async function fetchGhLastUpdated(){
-  const headers={'Accept':'application/vnd.github.v3+json'};
+  const headers=_ghReadHeaders();
   const res=await fetchTimeout(
     GH_API_BASE+'/commits?path='+GH_DATA_FILE+'&sha='+GH_BRANCH+'&per_page=1',{headers},15000
   );
