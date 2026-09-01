@@ -112,7 +112,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 .scale-grad{height:6px;border-radius:3px;background:linear-gradient(90deg,#1a7f37,#d29922,#cf222e);margin:4px 0 2px;}
 .scale-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);}
 .map-toolbar{position:absolute;bottom:14px;right:10px;z-index:900;display:flex;flex-direction:column;gap:5px;}
-.infra-panel{position:absolute;top:10px;right:10px;z-index:900;background:rgba(255,255,255,.97);border:1px solid var(--border);border-radius:8px;font-size:11px;backdrop-filter:blur(6px);box-shadow:var(--shadow);min-width:190px;overflow:hidden;}
+.map-update-btn{position:absolute;top:10px;right:10px;z-index:950;background:#cf222e;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;gap:1px;font-family:'Inter',sans-serif;transition:background .12s;line-height:1.3;}
+.map-update-btn:hover{background:#a40e26;}
+.map-update-btn:disabled{opacity:.65;cursor:not-allowed;}
+.map-update-sub{font-size:9px;font-weight:600;opacity:.92;}
+.infra-panel{position:absolute;top:54px;right:10px;z-index:900;background:rgba(255,255,255,.97);border:1px solid var(--border);border-radius:8px;font-size:11px;backdrop-filter:blur(6px);box-shadow:var(--shadow);min-width:190px;overflow:hidden;}
 .infra-hdr{padding:7px 10px;font-weight:700;cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:var(--surface);border-bottom:1px solid var(--border);}
 .infra-arr{transition:transform .15s;font-size:9px;}
 .infra-body{padding:6px 10px;display:flex;flex-direction:column;gap:5px;max-height:400px;overflow-y:auto;transition:max-height .15s;}
@@ -462,8 +466,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
   </div>
 </div>
 <div class="tabs-bar">
-  <button class="tab-btn active" id="tab-home" onclick="showTab('home')">&#127968; Inicio</button>
-  <button class="tab-btn cat-tab" id="tab-todos" onclick="showCatTab('todos')">&#9671; Todos</button>
+  <button class="tab-btn" id="tab-home" onclick="showTab('home')">&#127968; Inicio</button>
+  <button class="tab-btn cat-tab active" id="tab-todos" onclick="showCatTab('todos')">&#9671; Todos</button>
   <button class="tab-btn cat-tab" id="tab-ap" onclick="showCatTab('ap')">&#128308; AP</button>
   <button class="tab-btn cat-tab" id="tab-as" onclick="showCatTab('as')">&#128994; AS</button>
   <button class="tab-btn cat-tab" id="tab-slrat" onclick="showCatTab('slrat')">&#127040; SLRAT</button>
@@ -475,7 +479,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
   <button class="tab-btn" id="tab-upload" onclick="showTab('upload')">&#128194; Cargar BD</button>
 </div>
 <!-- HOME TAB -->
-<div class="tab-page active" id="page-home">
+<div class="tab-page" id="page-home">
   <div class="home-page">
     <div class="home-title">&#128506; Panel BD — Gestión de Tareas</div>
     <div class="home-sub">Selecciona una categoría para comenzar a trabajar</div>
@@ -502,7 +506,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
   </div>
 </div>
 <!-- MAPA TAB -->
-<div class="tab-page" id="page-mapa">
+<div class="tab-page active" id="page-mapa">
   <div class="filters">
     <span class="f-label">Filtro</span>
     <button class="f-btn on" id="f-all" onclick="setFilter('all')">Todos</button>
@@ -550,6 +554,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
     <div class="map-col">
       <div class="map-wrap">
         <div id="map"></div>
+        <button class="map-update-btn" id="map-update-btn" onclick="mapUpdateClick()" title="Cargar la última BD publicada en GitHub">
+          <span id="map-update-label">&#128260; Actualizar</span>
+          <span class="map-update-sub" id="map-update-sub"></span>
+        </button>
         <div class="map-counter" id="map-counter">
           <span class="map-counter-n" id="map-counter-n">0</span>
           <span class="map-counter-label">tareas</span>
@@ -775,13 +783,25 @@ CATEGORIA: AGUA POTABLE OR AGUAS SERVIDAS
 ESTADO = En Ejecuci&#243;n OR Aceptada OR Asignada Ejecutor OR Pdt. Asignaci&#243;n
 CENTRO OPERATIVO = TALAGANTE</pre>
     </div>
+    <div class="gh-sync-bar">
+      <span style="font-size:20px">&#128229;</span>
+      <div style="flex:1;min-width:220px">
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">Cargar datos publicados en GitHub</div>
+        <div style="font-size:11.5px;color:var(--text2);line-height:1.5">
+          Trae la &#250;ltima BD publicada (<code>bd_data.json</code>) y la deja lista para revisar y aplicar,
+          igual que al subir un Excel. El HTML de la app no se toca — carga r&#225;pido siempre.
+        </div>
+        <div class="gh-status" id="load-gh-status" style="margin-top:4px;"></div>
+      </div>
+      <button class="gh-btn secondary" id="gh-load-btn" onclick="loadDataFromGithub()">&#128229; Cargar datos desde GitHub</button>
+    </div>
     <div class="gh-sync-bar" style="border-color:var(--ok);background:var(--ok-bg);">
       <span style="font-size:20px">&#9729;&#65039;</span>
       <div style="flex:1;min-width:220px">
-        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">Publicar app actualizada en GitHub</div>
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">Publicar BD actualizada en GitHub</div>
         <div style="font-size:11.5px;color:var(--text2);line-height:1.5">
-          Carga y aplica una BD nueva arriba. Al publicar, el panel arma un <b>index.html</b> con esos datos
-          embebidos y lo sube directo al repo — sin pasar por dominios que la empresa pueda bloquear.
+          Carga y aplica una BD nueva arriba. Al publicar, se sube solo <b>bd_data.json</b> (liviano) al repo —
+          el <code>index.html</code> nunca se regenera, as&#237; que no vuelve a pesar de m&#225;s ni generar lag.
         </div>
         <div class="gh-token-row">
           <input class="gh-token-input" type="password" id="gh-token-input"
@@ -794,7 +814,7 @@ CENTRO OPERATIVO = TALAGANTE</pre>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
         <button class="gh-publish-btn" id="gh-publish-btn" style="background:var(--ok);" onclick="publishToGithub()">&#9729;&#65039; Publicar en GitHub</button>
-        <button class="gh-btn secondary" onclick="downloadEmbeddedHtml()">&#8681; Descargar HTML (respaldo manual)</button>
+        <button class="gh-btn secondary" onclick="downloadGhJson()">&#8681; Descargar JSON (respaldo manual)</button>
       </div>
     </div>
     <div class="upload-slot" id="slot-bd">
@@ -5059,10 +5079,15 @@ function loadBD(input){
 function applyBD(){showLoadModal();}
 
 // ─── GITHUB SYNC ────────────────────────────────────────────────────────────
+// Arquitectura: el index.html NUNCA se regenera ni se vuelve a publicar acá
+// (eso fue lo que causaba lag en equipos más lentos, por el tamaño del
+// archivo). Solo se sube/baja un archivo chico de datos, bd_data.json, con
+// la API de Git de GitHub (blobs/trees/commits) para no toparse con el
+// límite de 1MB de la API de "contents".
 const GH_OWNER='cristiansaldiviam-blip';
 const GH_REPO='panel-bd';
 const GH_BRANCH='main';
-const GH_TARGET_FILE='index.html';
+const GH_DATA_FILE='bd_data.json';
 const GH_API_BASE='https://api.github.com/repos/'+GH_OWNER+'/'+GH_REPO;
 
 function saveGhToken(val){
@@ -5087,55 +5112,12 @@ function initGhToken(){
   }
 }
 
-// Arma el HTML completo del panel con la BD actual embebida en INIT_BD,
-// reemplazando el bloque de datos original en el propio documento.
-function buildEmbeddedHtml(){
-  const html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
-  // OJO: estos marcadores NO incluyen los corchetes del array — el contenido
-  // que se inserta va envuelto en JSON.parse("...") (ver más abajo), no como
-  // literal de array suelto.
-  const startMarker='const INIT_BD = ';
-  const endMarker=';\n\n// \u2500\u2500\u2500 STATE';
-  const startIdx=html.indexOf(startMarker);
-  const endIdx=html.indexOf(endMarker);
-  if(startIdx===-1||endIdx===-1||endIdx<startIdx){
-    throw new Error('No se encontró el bloque de datos embebidos (INIT_BD) en el HTML.');
-  }
-  const before=html.slice(0,startIdx+startMarker.length);
-  const after=html.slice(endIdx);
-  // Se embebe como JSON.parse("...") en vez de un literal de array plano:
-  // el motor JS tiene que COMPILAR un literal de array como si fuera código,
-  // mientras que JSON.parse usa un parser dedicado mucho más rápido para
-  // datos — con archivos de varios MB esto reduce notablemente el tiempo de
-  // carga, sobre todo en equipos más lentos.
-  const jsonText=JSON.stringify(DATA);
-  // Verificación: confirmar que el JSON generado es válido y tiene la misma
-  // cantidad de tareas que DATA. Si algo salió mal, corta acá en vez de
-  // publicar datos corruptos.
-  let parsedCheck;
-  try{ parsedCheck=JSON.parse(jsonText); }
-  catch(e){ throw new Error('Verificación falló: el JSON generado es inválido.'); }
-  if(!Array.isArray(parsedCheck)||parsedCheck.length!==DATA.length){
-    throw new Error('Verificación falló: se esperaban '+DATA.length+' tareas pero el JSON generado tiene '+
-      (Array.isArray(parsedCheck)?parsedCheck.length:'formato inválido')+'. No se publicó nada.');
-  }
-  // JSON.stringify(jsonText) convierte el texto JSON en un literal de string
-  // JS válido (con comillas y escapes correctos), listo para envolver en
-  // JSON.parse(...).
-  const embedCode='JSON.parse('+JSON.stringify(jsonText)+')';
-  const newHtml=before+embedCode+after;
-  return newHtml;
-}
-
-// Publica el HTML con la BD embebida directo en GitHub, en un solo paso,
-// usando la API de Git (blobs/trees/commits) para no toparse con el límite
-// de 1MB que tiene la API de "contents" para archivos grandes.
 // Traduce códigos HTTP comunes de la API de GitHub a un motivo entendible.
 function ghErrorHint(status){
-  if(status===401) return 'token inv\u00e1lido, vencido o mal pegado';
-  if(status===403) return 'token sin permiso suficiente (necesita scope \u201crepo\u201d completo, o \u201cContents: Read and write\u201d si es fine-grained) o l\u00edmite de la API alcanzado';
-  if(status===404) return 'no se encontr\u00f3 el repo/rama (revis\u00e1 el nombre del repo o que el token tenga acceso)';
-  if(status===422) return 'datos inv\u00e1lidos en la solicitud';
+  if(status===401) return 'token inválido, vencido o mal pegado';
+  if(status===403) return 'token sin permiso suficiente (necesita scope “repo” completo, o “Contents: Read and write” si es fine-grained) o límite de la API alcanzado';
+  if(status===404) return 'no se encontró el repo/rama/archivo (revisá el nombre del repo, la rama, o que el token tenga acceso)';
+  if(status===422) return 'datos inválidos en la solicitud';
   return 'HTTP '+status;
 }
 
@@ -5151,11 +5133,119 @@ function fetchTimeout(url,opts,ms){
 // Reactiva el botón "Publicar" y limpia el estado, por si quedó "pegado"
 // (por ej. si el navegador restauró la página desde caché con bfcache).
 function resetPublishUI(){
-  const btn=document.getElementById('gh-publish-btn');
-  if(btn){ btn.disabled=false; btn.textContent='\u2601\ufe0f Publicar en GitHub'; }
+  const pubBtn=document.getElementById('gh-publish-btn');
+  if(pubBtn){ pubBtn.disabled=false; pubBtn.textContent='\u2601\ufe0f Publicar en GitHub'; }
+  const loadBtn=document.getElementById('gh-load-btn');
+  if(loadBtn){ loadBtn.disabled=false; loadBtn.textContent='\ud83d\udce5 Cargar datos desde GitHub'; }
+  const mapBtn=document.getElementById('map-update-btn');
+  const mapLabel=document.getElementById('map-update-label');
+  if(mapBtn){ mapBtn.disabled=false; }
+  if(mapLabel){ mapLabel.textContent='\ud83d\udd04 Actualizar'; }
 }
 window.addEventListener('pageshow',resetPublishUI);
 
+// Trae bd_data.json desde GitHub y lo deja listo en el modal de carga, igual
+// que si se hubiera subido un Excel — el usuario revisa y aplica con
+// "Cargar todo"/"Cargar filtrado" como siempre. Esto REEMPLAZA la BD actual
+// en pantalla por la del archivo (no la combina con lo que ya estaba
+// cargado), tal como hace la carga manual.
+// Trae las filas de bd_data.json desde GitHub (API de Git: blobs/trees/
+// commits, sin el límite de 1MB de la API de "contents"). Función compartida
+// por el botón de la pestaña "Cargar BD" y el botón rojo del mapa.
+async function _fetchBdDataFromGithub(){
+  const headers={'Accept':'application/vnd.github.v3+json'};
+  const refRes=await fetchTimeout(GH_API_BASE+'/git/ref/heads/'+GH_BRANCH,{headers});
+  if(!refRes.ok) throw new Error('No se pudo leer la rama '+GH_BRANCH+' — '+ghErrorHint(refRes.status));
+  const refData=await refRes.json();
+  const commitRes=await fetchTimeout(GH_API_BASE+'/git/commits/'+refData.object.sha,{headers});
+  if(!commitRes.ok) throw new Error('No se pudo leer el commit — '+ghErrorHint(commitRes.status));
+  const commitData=await commitRes.json();
+  const treeRes=await fetchTimeout(GH_API_BASE+'/git/trees/'+commitData.tree.sha,{headers});
+  if(!treeRes.ok) throw new Error('No se pudo leer el árbol de archivos — '+ghErrorHint(treeRes.status));
+  const treeData=await treeRes.json();
+  const entry=(treeData.tree||[]).find(e=>e.path===GH_DATA_FILE);
+  if(!entry) throw new Error('Todavía no existe '+GH_DATA_FILE+' en el repo — publicá una BD primero.');
+  const blobRes=await fetchTimeout(GH_API_BASE+'/git/blobs/'+entry.sha,{headers},30000);
+  if(!blobRes.ok) throw new Error('No se pudo leer el archivo — '+ghErrorHint(blobRes.status));
+  const blobData=await blobRes.json();
+  const b64=(blobData.content||'').replace(/\n/g,'');
+  const jsonText=decodeURIComponent(escape(atob(b64)));
+  const rows=JSON.parse(jsonText);
+  if(!Array.isArray(rows)||rows.length===0) throw new Error('El archivo está vacío o tiene un formato inválido.');
+  return rows;
+}
+
+// Fecha/hora del último commit que tocó bd_data.json (cuándo se publicó).
+async function fetchGhLastUpdated(){
+  const headers={'Accept':'application/vnd.github.v3+json'};
+  const res=await fetchTimeout(
+    GH_API_BASE+'/commits?path='+GH_DATA_FILE+'&sha='+GH_BRANCH+'&per_page=1',{headers},15000
+  );
+  if(!res.ok) return null;
+  const arr=await res.json();
+  if(!Array.isArray(arr)||arr.length===0) return null;
+  const dateStr=arr[0].commit&&arr[0].commit.committer&&arr[0].commit.committer.date;
+  return dateStr?new Date(dateStr):null;
+}
+function _fmtGhDate(d){
+  if(!d) return '';
+  const fecha=d.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit'});
+  const hora=d.toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
+  return fecha+' '+hora;
+}
+
+// Botón rojo del mapa: trae bd_data.json y lo aplica directo (equivalente a
+// "Cargar todo"), sin pasar por el modal de filtros — pensado para que
+// cualquiera, parado frente al mapa, actualice con un solo clic.
+async function mapUpdateClick(){
+  const btn=document.getElementById('map-update-btn');
+  const label=document.getElementById('map-update-label');
+  const sub=document.getElementById('map-update-sub');
+  if(!btn) return;
+  btn.disabled=true;
+  label.textContent='\u23f3 Actualizando...';
+  try{
+    const rows=await _fetchBdDataFromGithub();
+    pendingBD=rows;
+    applyBDFiltered(true);
+    const d=await fetchGhLastUpdated();
+    sub.textContent=d?('Subido: '+_fmtGhDate(d)):'';
+    sub.title='';
+  }catch(e){
+    sub.textContent='\u2717 Error al actualizar';
+    sub.title=e.message;
+    setTimeout(()=>{ if(sub.textContent.indexOf('Error')!==-1){ sub.textContent=''; sub.title=''; } },4000);
+  }finally{
+    label.textContent='\ud83d\udd04 Actualizar';
+    btn.disabled=false;
+  }
+}
+
+async function loadDataFromGithub(){
+  const status=document.getElementById('load-gh-status');
+  const btn=document.getElementById('gh-load-btn');
+  const setStatus=(cls,msg)=>{ if(status){ status.className='gh-status '+cls; status.textContent=msg; } };
+  btn.disabled=true; const origLabel=btn.textContent; btn.textContent='Cargando...';
+  setStatus('','Buscando '+GH_DATA_FILE+' en GitHub...');
+  try{
+    const rows=await _fetchBdDataFromGithub();
+    pendingBD=rows;
+    const loadedEl=document.getElementById('loaded-bd');
+    if(loadedEl) loadedEl.textContent='\u2713 '+rows.length+' tareas encontradas en GitHub ('+rows.filter(r=>r.lat).length+' georef.)';
+    const slotEl=document.getElementById('slot-bd');
+    if(slotEl) slotEl.classList.add('loaded');
+    setStatus('ok','\u2713 '+rows.length+' tareas listas — revisá y aplicá abajo.');
+    showLoadModal();
+  }catch(e){
+    const isAbort=e && e.name==='AbortError';
+    const msg=isAbort?'la conexión se colgó / fue bloqueada por la red':e.message;
+    setStatus('err','\u2717 '+msg);
+  }finally{
+    btn.disabled=false; btn.textContent=origLabel;
+  }
+}
+
+// Publica SOLO bd_data.json (liviano). El index.html nunca se toca.
 async function publishToGithub(){
   const status=document.getElementById('embed-status');
   const btn=document.getElementById('gh-publish-btn');
@@ -5167,95 +5257,84 @@ async function publishToGithub(){
   const ok=confirm(
     'Vas a publicar '+DATA.length.toLocaleString()+' tareas a GitHub\n'+
     '('+georef.toLocaleString()+' georeferenciadas).\n\n'+
-    'Revis\u00e1 que este n\u00famero coincida con lo que carg\u00e1ste.\n\n\u00bfContinuar?'
+    'Revisá que este número coincida con lo que cargáste.\n\n¿Continuar?'
   );
-  if(!ok){ setStatus('','Publicaci\u00f3n cancelada.'); return; }
+  if(!ok){ setStatus('','Publicación cancelada.'); return; }
   btn.disabled=true; const origLabel=btn.textContent; btn.textContent='Publicando...';
-  setStatus('','Armando index.html con la BD embebida...');
   try{
-    const newHtml=buildEmbeddedHtml();
+    const jsonText=JSON.stringify(DATA);
     const headers={
       'Authorization':'token '+token,
       'Accept':'application/vnd.github.v3+json',
       'Content-Type':'application/json'
     };
-    // 1. Rama actual → commit base
     setStatus('','1/6 Leyendo rama '+GH_BRANCH+'...');
     const refRes=await fetchTimeout(GH_API_BASE+'/git/ref/heads/'+GH_BRANCH,{headers});
     if(!refRes.ok) throw new Error('No se pudo leer la rama '+GH_BRANCH+' — '+ghErrorHint(refRes.status));
     const refData=await refRes.json();
     const baseCommitSha=refData.object.sha;
-    // 2. Commit base → tree base
     setStatus('','2/6 Leyendo commit base...');
     const commitRes=await fetchTimeout(GH_API_BASE+'/git/commits/'+baseCommitSha,{headers});
     if(!commitRes.ok) throw new Error('No se pudo leer el commit base — '+ghErrorHint(commitRes.status));
     const commitData=await commitRes.json();
     const baseTreeSha=commitData.tree.sha;
-    // 3. Crea el blob con el HTML nuevo (encoding utf-8, sin límite de 1MB)
-    setStatus('','3/6 Subiendo contenido ('+(Math.round(newHtml.length/1024/1024*10)/10)+' MB)...');
+    setStatus('','3/6 Subiendo contenido ('+(Math.round(jsonText.length/1024*10)/10)+' KB)...');
     const blobRes=await fetchTimeout(GH_API_BASE+'/git/blobs',{
       method:'POST',headers,
-      body:JSON.stringify({content:newHtml,encoding:'utf-8'})
+      body:JSON.stringify({content:jsonText,encoding:'utf-8'})
     },60000);
     if(!blobRes.ok) throw new Error('Error creando blob — '+ghErrorHint(blobRes.status));
     const blobData=await blobRes.json();
-    // 4. Crea un tree nuevo apuntando ese blob a index.html
-    setStatus('','4/6 Armando \u00e1rbol de archivos...');
+    setStatus('','4/6 Armando árbol de archivos...');
     const treeRes=await fetchTimeout(GH_API_BASE+'/git/trees',{
       method:'POST',headers,
       body:JSON.stringify({
         base_tree:baseTreeSha,
-        tree:[{path:GH_TARGET_FILE,mode:'100644',type:'blob',sha:blobData.sha}]
+        tree:[{path:GH_DATA_FILE,mode:'100644',type:'blob',sha:blobData.sha}]
       })
     });
     if(!treeRes.ok) throw new Error('Error creando tree — '+ghErrorHint(treeRes.status));
     const treeData=await treeRes.json();
-    // 5. Crea el commit nuevo
     setStatus('','5/6 Creando commit...');
     const newCommitRes=await fetchTimeout(GH_API_BASE+'/git/commits',{
       method:'POST',headers,
       body:JSON.stringify({
-        message:'Actualizar BD embebida \u2014 '+new Date().toLocaleString()+' ('+DATA.length+' tareas)',
+        message:'Actualizar '+GH_DATA_FILE+' \u2014 '+new Date().toLocaleString()+' ('+DATA.length+' tareas)',
         tree:treeData.sha,
         parents:[baseCommitSha]
       })
     });
     if(!newCommitRes.ok) throw new Error('Error creando commit — '+ghErrorHint(newCommitRes.status));
     const newCommitData=await newCommitRes.json();
-    // 6. Mueve la rama al nuevo commit
     setStatus('','6/6 Actualizando la rama...');
     const updateRefRes=await fetchTimeout(GH_API_BASE+'/git/refs/heads/'+GH_BRANCH,{
       method:'PATCH',headers,
       body:JSON.stringify({sha:newCommitData.sha})
     });
     if(!updateRefRes.ok) throw new Error('Error actualizando la rama — '+ghErrorHint(updateRefRes.status));
-    setStatus('ok','\u2713 '+DATA.length+' tareas publicadas en GitHub \u2014 '+new Date().toLocaleTimeString()+' (visible en el sitio en ~1-2 min)');
+    setStatus('ok','\u2713 '+DATA.length+' tareas publicadas en '+GH_DATA_FILE+' \u2014 '+new Date().toLocaleTimeString()+' (ya disponibles con "Cargar datos desde GitHub")');
   }catch(e){
     const isAbort=e && e.name==='AbortError';
-    const msg=isAbort?'la conexi\u00f3n se colg\u00f3 / fue bloqueada por la red':e.message;
-    setStatus('err','\u2717 Error: '+msg+' \u2014 pod\u00e9s usar "Descargar HTML" y subirlo manualmente.');
+    const msg=isAbort?'la conexión se colgó / fue bloqueada por la red':e.message;
+    setStatus('err','\u2717 Error: '+msg+' \u2014 podés usar "Descargar JSON" y subirlo manualmente.');
   }finally{
     btn.disabled=false; btn.textContent=origLabel;
   }
 }
 
-// Descarga local del HTML con BD embebida, como respaldo manual si el token
-// o la API de GitHub no est\u00e1n disponibles.
-function downloadEmbeddedHtml(){
+// Descarga local de bd_data.json, como respaldo manual si el token o la API
+// de GitHub no están disponibles.
+function downloadGhJson(){
   const status=document.getElementById('embed-status');
   const setStatus=(cls,msg)=>{ if(status){ status.className='gh-status '+cls; status.textContent=msg; } };
   if(!DATA||DATA.length===0){ setStatus('err','\u2717 Primero carga y aplica una BD en el panel.'); return; }
-  try{
-    const newHtml=buildEmbeddedHtml();
-    const blob=new Blob([newHtml],{type:'text/html'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url; a.download=GH_TARGET_FILE; a.click();
-    URL.revokeObjectURL(url);
-    setStatus('ok','\u2713 index.html generado con '+DATA.length+' tareas embebidas ('+(Math.round(newHtml.length/1024/1024*10)/10)+' MB). Sub\u00edlo a GitHub reemplazando el archivo actual.');
-  }catch(e){
-    setStatus('err','\u2717 Error: '+e.message);
-  }
+  const jsonText=JSON.stringify(DATA);
+  const blob=new Blob([jsonText],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=GH_DATA_FILE; a.click();
+  URL.revokeObjectURL(url);
+  setStatus('ok','\u2713 '+GH_DATA_FILE+' descargado ('+DATA.length+' tareas). Subilo a GitHub reemplazando el archivo actual.');
 }
 
 function copyFiltersText(){
@@ -5295,28 +5374,9 @@ window.addEventListener('DOMContentLoaded',async()=>{
   buildMarkers();
   populateSelects();
   updateStats();
-  // Default: set COTAMIL as proveedor first, then AS category
-  const provMenu=document.getElementById('ms-menu-prov');
-  if(provMenu){
-    provMenu.querySelectorAll('.ms-opt').forEach(opt=>{
-      const label=opt.querySelector('span:nth-child(2)');
-      if(label&&label.textContent.toUpperCase().includes('COTAMIL')){
-        MS_SEL.prov.add(label.textContent.trim());
-        opt.classList.add('sel');
-        _updateMsLabel('prov');
-      }
-    });
-  }
-  // onProvChange rebuilds catot with counts + resets dependents
-  onProvChange();
-  // Then set AGUAS SERVIDAS in catot
-  setTimeout(()=>{
-    const catotEl=document.getElementById('f-catot');
-    if(catotEl){
-      const asOpt=[...catotEl.options].find(o=>o.value==='AGUAS SERVIDAS');
-      if(asOpt){ catotEl.value='AGUAS SERVIDAS'; onCatotChange(); }
-    }
-  },0);
+  // La app abre directo en el mapa (pestaña "Todos", sin filtro de categoría)
+  // en vez de en Inicio — así todos ven el mapa de entrada.
+  showCatTab('todos');
   hideSpinner();
 });
 
